@@ -184,10 +184,10 @@ To perform a backward search on forms from (point), do e.g.:
              (object-class this)
              (or start "?") (or end "?")
              (buffer-substring-no-properties start end)))
-    (mapcar (lambda (lexeme)
-              (princ " ")
-              (princ (object-class lexeme)))
-            (lp:children this))
+    (mapc (lambda (lexeme)
+	    (princ " ")
+	    (princ (object-class lexeme)))
+	  (lp:children this))
     (princ ">\n")))
 
 (defmethod object-print ((this lp:parser-symbol) &rest strings)
@@ -484,7 +484,7 @@ current syntax parse data (`first-line' and `last-line' slots)."
       (loop for line = (lp:first-line syntax)
             then (lp:next-line line)
             while line
-            do (mapcar #'lp:fontify (lp:line-forms line))))))
+            do (mapc #'lp:fontify (lp:line-forms line))))))
 
 (defun lp:update-line-if-different-parser-state (line parser-state syntax)
   (when (and line
