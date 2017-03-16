@@ -91,5 +91,4 @@
                              (module-map (lambda (symbol variable)
                                            (and (macro? (variable-ref variable))
                                                 symbol))
-                                      (module-public-interface (resolve-module '(guile))))))
-    (format #t "(provide 'lyqi-words)~%")))
+                                      (module-public-interface (resolve-module '(guile))))))))

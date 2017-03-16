@@ -22,13 +22,12 @@
 ;;; lyqi-syntax.el - LilyPond syntax
 ;;;
 
-(require 'cl)
 (require 'eieio)
 (require 'lp-base)
 (require 'lyqi-pitchnames)
-(require 'lyqi-custom)
 (require 'lyqi-words)
-
+(require 'cl)
+(eval-when-compile (load "user-vars"))
 ;;;
 ;;; Lexer states
 ;;;
@@ -40,8 +39,8 @@
 (defclass lyqi:base-parser-state (lyqi:lilypond-parser-state)
   ((form-class :initform 'lyqi:verbatim-form)))
 
-(defclass lyqi:toplevel-parser-state (lyqi:base-parser-state) ())
-(defclass lyqi:embedded-toplevel-parser-state (lyqi:toplevel-parser-state)
+(defclass lyqi--toplevel-parser-state (lyqi:base-parser-state) ())
+(defclass lyqi:embedded-toplevel-parser-state (lyqi--toplevel-parser-state)
   ((embedded-lilypond :initform t)))
 (defclass lyqi:duration?-parser-state (lyqi:lilypond-parser-state) ())
 (defclass lyqi:note-duration?-parser-state (lyqi:lilypond-parser-state) ())
@@ -86,9 +85,9 @@
 
 (defmethod initialize-instance :AFTER ((this lyqi:lilypond-syntax) &optional fields)
   (set-slot-value this 'possible-languages
-                  (copy-list lyqi:prefered-languages))
+                  (copy-list lyqi-prefered-languages))
   (set-slot-value this 'default-parser-state
-                  (make-instance 'lyqi:toplevel-parser-state)))
+                  (make-instance 'lyqi--toplevel-parser-state)))
 
 ;;;
 ;;; Music type mixins
@@ -333,13 +332,13 @@ Oterwise, return NIL."
              (values parser-state
                      (lyqi:reduce-lexemes
                       parser-state
-                      (make-instance (cond ((memq sym lyqi:lilypond-keywords)
+                      (make-instance (cond ((memq sym lyqi-lilypond-keywords)
                                             'lyqi:keyword-lexeme)
-                                           ((memq sym lyqi:lilypond-music-variables)
+                                           ((memq sym lyqi-lilypond-music-variables)
                                             'lyqi:variable-lexeme)
-                                           ((or (memq sym lyqi:lilypond-music-functions)
-                                                (memq sym lyqi:lilypond-markup-commands)
-                                                (memq sym lyqi:lilypond-markup-list-commands))
+                                           ((or (memq sym lyqi-lilypond-music-functions)
+                                                (memq sym lyqi-lilypond-markup-commands)
+                                                (memq sym lyqi-lilypond-markup-list-commands))
                                             'lyqi:function-lexeme)
                                            (t
                                             'lyqi:user-command-lexeme))
@@ -355,7 +354,7 @@ Oterwise, return NIL."
                  nil
                  t))))
 
-(defmethod lp:lex ((parser-state lyqi:toplevel-parser-state) syntax)
+(defmethod lp:lex ((parser-state lyqi--toplevel-parser-state) syntax)
   (lyqi:skip-whitespace)
   (cond ((eolp)
          ;; at end of line, reduce remaining lexemes

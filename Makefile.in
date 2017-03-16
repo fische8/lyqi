@@ -20,23 +20,24 @@ VERSION = @PACKAGE_VERSION@
 srcdir = @srcdir@
 AWK=@AWK@
 EMACS ?= emacs
-
+lilypond = @LILYPOND@
 lilypond_version = @lilypond_version@
+
+config_generated_files = $(subst .in,,$(shell ls *.in))
 
 distdir = $(PACKAGE)-$(VERSION)
 
 # the order here is the order in lyqi.el. Symbols should be defined
 # when they are used
 IN_SOURCES = package_header.el.in \
-             customization.el  completion.el			\
+             user-vars.el  completion.el			\
              lp-base.el lyqi-syntax.el				\
              hyphenate.el.in					\
              lyqi-compile-commands.el				\
              lyqi-editing-commands.el				\
              lyqi-indent.el					\
              lyqi-help-index.el lyqi-help.el lyqi-midi.el	\
-             lyqi-mode.el lyqi-pitchnames.el			\
-             lyqi-templates.el
+             lyqi-mode.el lyqi-pitchnames.el
 
 EL_SOURCES = $(subst .in,,$(IN_SOURCES))
 
@@ -77,7 +78,7 @@ distfiles := ${IN_SOURCES} \
 
 LILYPOND_ORG_DOC_URL = http://lilypond.org/doc/v2.13/Documentation/notation
 
-all: lyqi.elc
+all: lyqi.elc lilypond-words.el
 
 lyqi.elc: lyqi.el
 	$(EMACS) -batch -u $$USER -l set-compilation-path.el -f batch-byte-compile lyqi.el
@@ -88,8 +89,12 @@ lilypond-index.html:
 lyqi-help-index.el: lilypond-index.html
 	perl make-help-index.pl lilypond-index.html $(LILYPOND_ORG_DOC_URL) $@
 
-lilypond-words.el:
-	ln lyqi-words_$(lilypond_version).el lilypond-words.el
+lilypond-words.el: | lyqi-words_$(lilypond_version).el
+	ln -f lyqi-words_$(lilypond_version).el lilypond-words.el
+
+lyqi-words_$(lilypond_version).el: make-words.ly
+	$(lilypond) make-words
+	mv lyqi-words.el lyqi-words_$(lilypond_version).el
 
 # we make lyqi.el concatenating all the source files
 lyqi.el: $(EL_SOURCES)
@@ -128,10 +133,11 @@ dist: $(distdir)
 	tar -czf ../lyqi_$(VERSION).tar.gz --atime-preserve --owner=0 --group=0 $(distdir)
 
 clean:
-	rm -f lilypond-index.html lyqi-help-index.el lyqi.el lyqi.elc
+	rm -f lilypond-index.html lyqi-help-index.el lyqi.el *elc
 
 distclean: clean
 	rm -f *~
-	rm -f lilypond-words.el
+	rm -f lilypond-words.el lyqi-words*.el
+	rm -rf config.status config.log  autom4te.cache $(config_generated_files)
 
 .PHONY: osx linux dist clean distclean install-source install-bytecode

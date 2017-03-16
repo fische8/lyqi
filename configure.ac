@@ -9,6 +9,7 @@ LYQI_CHECK_HYPHEN_PATTERNS_DIR()
 AC_MSG_RESULT([$hyphenation_patterns_dir])
 
 # where is lilypond?
+AC_PATH_PROG([LILYPOND],[lilypond])
 LYQI_CHECK_LILYPOND
 
 AC_CONFIG_FILES(hyphenate.el package_header.el Makefile)

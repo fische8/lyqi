@@ -584,6 +584,7 @@ PACKAGE_URL=''
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 lilypond_version
+LILYPOND
 hyphenation_patterns_dir
 AWK
 locate
@@ -1820,8 +1821,49 @@ hyphenation_patterns_dir=\"$hyphenation_patterns_dir\"
 $as_echo "$hyphenation_patterns_dir" >&6; }
 
 # where is lilypond?
+# Extract the first word of "lilypond", so it can be a program name with args.
+set dummy lilypond; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LILYPOND+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LILYPOND in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LILYPOND="$LILYPOND" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LILYPOND="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LILYPOND=$ac_cv_path_LILYPOND
+if test -n "$LILYPOND"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LILYPOND" >&5
+$as_echo "$LILYPOND" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 
 lilypond_version=$(lilypond --version|head -n1|sed -re 's/[^[:digit:]]*([[:digit:]]\.[[:digit:]]+).*/\1/')
+
 
 
 

@@ -6,7 +6,6 @@
 (eval-when-compile (require 'cl))
 (require 'eieio)
 (require 'lp-base)
-(require 'lyqi-custom)
 (require 'lyqi-syntax)
 (require 'lyqi-indent)
 (require 'lyqi-midi)
@@ -14,6 +13,7 @@
 (require 'lyqi-compile-commands)
 (require 'lyqi-completion)
 (require 'lyqi-help)
+(eval-when-compile (load "user-vars"))
 
 ;;;
 ;;; Language selection
