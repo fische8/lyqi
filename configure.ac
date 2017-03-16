@@ -11,6 +11,5 @@ AC_MSG_RESULT([$hyphenation_patterns_dir])
 # where is lilypond?
 LYQI_CHECK_LILYPOND
 
-AC_SUBST(lilypond_version)
 AC_CONFIG_FILES(hyphenate.el package_header.el Makefile)
 AC_OUTPUT

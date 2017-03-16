@@ -22,4 +22,6 @@ AC_SUBST(hyphenation_patterns_dir)
 
 AC_DEFUN([LYQI_CHECK_LILYPOND], [[
 lilypond_version=$(lilypond --version|head -n1|sed -re 's/[^[:digit:]]*([[:digit:]]\.[[:digit:]]+).*/\1/')
-]])
+]
+AC_SUBST(lilypond_version)
+])

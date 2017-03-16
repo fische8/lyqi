@@ -1,0 +1,281 @@
+;; hyphenate.el - hyphenate words for automatic lyrics hyphenation
+;; Copyright 2016 Héctor Lahoz
+;;
+;; this program is based on the work of Franklin M. Liang
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(eval-when-compile (require 'cl))
+
+; (optimize (safety 0)) ;; uncomment for production
+
+(defstruct ptrie:node
+  children ;; CAR - no match (try next char); CDR - match (next position)
+  (char nil :read-only t)
+  (final nil))
+
+(defvar pattern-trie (make-ptrie:node :char ?\s :children '(nil . nil))
+  "Root of the patterns trie")
+
+(defvar right-hyphen-min 2
+  "Minimun length of string after last hyphen. Words shorter than this
+won't be hyphenated")
+
+;;; loading patterns
+(defvar hyphen-patterns-dir @hyphenation_patterns_dir@
+  "The directory where hyphenation pattern files live")
+
+(defmacro digitp (c)
+  "t if c is a digit. nil otherwise"
+  `(if (and (< 47 ,c)
+	    (> 58 ,c))
+       't
+     'nil))
+
+(defun dictionary-file (lang)
+  (let* ((basename (concat "hyph-" lang ".tex"))
+	 (personal-dic (expand-file-name basename "~/.lyqi")))
+    (if (file-readable-p personal-dic)
+	personal-dic
+      (concat hyphen-patterns-dir "/" basename))))
+
+(defun read-pattern-dic ()
+  (let (pat)
+    (setq pat (buffer-substring (point)
+				(progn (beginning-of-line 2)
+				       (- (point) 1))))
+    (if (or (equal pat "")
+	    (equal pat "\n"))
+	nil
+      pat)))
+
+(defun read-pattern-tex ()
+  "Returns the next pattern leaving point after it"
+  (let ((pat))
+    (skip-chars-forward " \t\n")
+    (when (= (following-char) ?%)
+      (beginning-of-line 2))
+    (when (/= (following-char) ?})
+      (skip-chars-forward " \t\n")
+      (setq pat (buffer-substring (point)
+				  (progn (re-search-forward " \\|\n" (+ (point) 20))
+					 (1- (point) ))))
+      (when (or (equal pat "")
+		(equal pat "\n"))
+	(setq pat nil)))
+    pat))
+
+(defun load-patterns (file)
+  "Load hyphenation patterns from FILE. FILE must be readable"
+  (let (format
+	pat
+	tmp
+	tex-found)
+    (if (not (file-readable-p file))
+	nil
+      (setq pattern-trie (make-ptrie:node :char ?\s :children '(nil . nil)))
+      (with-temp-buffer
+	(insert-file-contents file)
+	(while (and (not format)
+		    (search-forward "\\patterns" nil t))
+	  (setq tmp (point))
+	  ;; some files break the search because "\\patterns" appears
+	  ;; within comments so we must check that it is not a TeX comment
+	  (when (not (string-match "%" (buffer-substring (line-beginning-position) (point))))
+	    (setq format ':tex)
+	    (search-forward "{" (+ (point) 10))
+	    (fset 'read-pattern 'read-pattern-tex)))
+	;; more formats? For now just TeX and dic (libreoffice)
+	(when (null format)
+	  (setq format :dic)
+	  (fset 'read-pattern 'read-pattern-dic))
+	(while (setq pat (read-pattern))
+	    (add-pattern pattern-trie pat)))
+      (message (concat "Patterns loaded from \"" file "\"")))))
+
+(defun set-hyphen-language (lang)
+  "Set the language for the lyrics in the current buffer"
+  (interactive "sLanguage (iso 639-1 code): ")
+  (let ((file (dictionary-file lang)))
+    (when (not (load-patterns file))
+      (message (concat "Language \"" lang "\" not available")))))
+
+;;; ptrie management
+(defun ptrie:print-trie (n path)
+  "Print the tree recursively"
+  (let ((path_ (concat path (make-string 1 (ptrie:node-char n)))))
+    (when (ptrie:node-final n)
+      (princ path_)
+      (princ " - ")
+      (princ (ptrie:node-final n))
+      (princ "\n"))
+    (when (cdr (ptrie:node-children n))
+      (ptrie:print-trie (cdr (ptrie:node-children n)) path_))
+    (when (car (ptrie:node-children n))
+      (ptrie:print-trie (car (ptrie:node-children n)) path))))
+
+(defun ptrie:print-node (n)
+  "Print node N for debugging"
+  (let ((ret1 "Node:  :")
+	(ret2 " - "))
+ ;; I don't understand why this is necessary			
+ ;; it seems the string referenced by ret2 is kept between calls and it is not initialised
+    (aset ret2 0 ?\s)
+    (aset ret2 2 ?\s)
+    (aset ret1 6 (ptrie:node-char n))
+    (if (null (ptrie:node-children n))
+	(setq ret2 "no children")
+      (when (car (ptrie:node-children n))
+	(aset ret2 0 (ptrie:node-char (car (ptrie:node-children n)))))
+      (when (cdr (ptrie:node-children n))
+	(aset ret2 2 (ptrie:node-char (cdr (ptrie:node-children n))))))
+    (concat ret1 ret2)))
+
+(defun ptrie:find-next-char (node char &optional create)
+  "Returns the node corresponding to CHAR. Add a new node when CREATE is t
+and requested node doesn't exist"
+  (let ((prev node)
+	n
+	new
+	(set-prev-link 'setcdr))
+    (setq n (cdr (ptrie:node-children prev)))
+      
+    (while (and n  ;; works too when (null node-children)
+		(> char (ptrie:node-char n)))
+      (setq prev n)
+      (setq set-prev-link 'setcar)
+      (setq n (car (ptrie:node-children n))))
+    (when (or (null n)
+	      (/= char (ptrie:node-char n)))
+      (if (null create)
+	  (setq n nil)
+	(setq new (make-ptrie:node :char char
+			     :children (cons n nil)))
+	(when (null (ptrie:node-children prev))
+	  (setf (ptrie:node-children prev) '(nil . nil)))
+	(funcall set-prev-link (ptrie:node-children prev) new)
+	(setq n new)))
+    n))
+
+(defun find-pattern (trie p)
+  "Return pattern indicated by P starting at TRIE or nil if not found"
+  (let ((n trie))
+    (dotimes (i (length p) (ptrie:node-final n))
+      (when (null (setq n (ptrie:find-next-char n (aref p i))))
+	(return nil)))))
+
+(defun add-pattern (trie p)
+  "Add pattern P to trie TRIE"
+  (let ((pnw (pat-nw p))
+	(n trie)
+	char)
+    
+    (dotimes (i (length pnw))
+      (setq char (aref pnw i))
+      (setq n (ptrie:find-next-char n char t)))
+    (setf (ptrie:node-final n) p)))
+
+(defun pat-nw (str)
+  "Reomve weight digits from STR"
+  (let (ret
+	char
+	char-str
+	(l (length str)))
+    (do ((i (- l 1) (1- i))) ((< i 0))
+	(setq char (aref str i))
+	(setq char-str (substring-no-properties str i (1+ i)))
+	(if (not (string-match "[[:digit:]]" char-str))
+	    (push char ret)))
+    (concat ret)))
+
+(defun find-hyphens (word)
+  "Returns a list of integers where WORD can be broken"
+  (let* (s-word
+	 weight
+	 ret
+	 pat
+	 (hpos 0)  ;; index to location of a possible hyphen
+	 (word-length (length word))
+	 ;; reserve word-length + 1. We need the extra slot for cases like
+	 ;; pattern "ou2" matching "you". It is discarded but we need the storage
+	 (hyphen-weights (make-vector (1+ word-length) 0)))
+
+    (when (> word-length right-hyphen-min)
+      (do ((end 1 (1+ end))) ((> end word-length))
+	  (when (setq pat (find-pattern pattern-trie (concat "." (substring word 0 end))))
+      	    (setq hpos 0)
+      	    (dotimes (ppos (length pat))
+      	      (if (digitp (aref pat ppos))
+      		  (progn
+      		    (setq weight (- (aref pat ppos) ?0))
+      		    (when (> weight (aref hyphen-weights hpos))
+      		      (aset hyphen-weights hpos weight)))
+      		(when (not (= (aref pat ppos) ?.))
+      		  (setq hpos (1+ hpos)))))))
+
+      (do ((anchor 1 (1+ anchor))) ((= anchor word-length))
+	  (setq s-word (substring word anchor))
+	  (do ((end 1 (1+ end))) ((> end (length s-word)))
+	      (when (setq pat (find-pattern pattern-trie (substring s-word 0 end)))
+		;; store weights
+		(setq hpos 0)
+		(dotimes (pos (length pat))
+		  (if (not (digitp (aref pat pos)))
+		      (setq hpos (1+ hpos))
+		    (setq weight (- (aref pat pos) ?0))
+		    (when (> weight (aref hyphen-weights (+ anchor hpos)))
+		      (aset hyphen-weights (+ anchor hpos) weight))))))
+	  ;; now do the same but with a trailing "," if we are at end of word
+	  (if (= (+ anchor (length s-word)) word-length)
+	      (when (setq pat (find-pattern pattern-trie (concat s-word ".")))
+		(setq hpos 0)
+		(dotimes (pos (length pat))
+		  (if (not (digitp (aref pat pos)))
+		      (setq hpos (1+ hpos))
+		    (setq weight (- (aref pat pos) ?0))
+		    (when (> weight (aref hyphen-weights (+ anchor hpos)))
+		      (aset hyphen-weights (+ anchor hpos) weight)))))))
+
+      (do ((i (- word-length right-hyphen-min) (1- i))) ((= i 0) ret)
+	(when (= (% (aref hyphen-weights i) 2) 1)
+	  (push i ret))))))
+
+(defun ly:hyphenate-word (word)
+  (let* ((word-d (downcase word))
+	 (hyf (find-hyphens word-d))
+	 (start 0)
+	 ret)
+    (dolist (i hyf)
+      (push (substring word start i) ret)
+      (push " -- " ret)
+      (setq start i))
+    (push (substring word start) ret)	;final piece
+    (apply 'concat (reverse ret))))
+
+(defun lyqi:hyphenate-region (beg end)
+  "Add lilypond centered hyphens to every word in the region"
+  (interactive "r")
+  (save-excursion
+    (goto-char beg)
+    (search-forward "{" (line-beginning-position 2) t)
+    (let ((end (copy-marker end))
+	  word-beg)
+      (while (< (point) end)
+	(skip-chars-forward "^a-zA-Záéíóúñäëöü") ;; find next word
+	(setq word-beg (point))
+	(forward-word)
+	(insert	(ly:hyphenate-word 
+		 (prog1
+		     (buffer-substring-no-properties word-beg (point))
+		   (delete-region word-beg (point)))))))))
