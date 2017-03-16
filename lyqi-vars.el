@@ -117,3 +117,5 @@ files located in other places in \"~/Documents/MyProjects\"."
   "Command used to open .midi files"
   :group 'lyqi
   :type 'string)
+
+(provide 'lyqi-vars)

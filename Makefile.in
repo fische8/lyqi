@@ -30,8 +30,8 @@ distdir = $(PACKAGE)-$(VERSION)
 # the order here is the order in lyqi.el. Symbols should be defined
 # when they are used
 IN_SOURCES = package_header.el.in \
-             user-vars.el  completion.el			\
-             lp-base.el lyqi-syntax.el				\
+             lp-base.el						\
+             lyqi-vars.el lyqi-syntax.el completion.el		\
              hyphenate.el.in					\
              lyqi-compile-commands.el				\
              lyqi-editing-commands.el				\
