@@ -1,0 +1,397 @@
+\input texinfo
+@setfilename lyqi-mode.info
+@settitle lyqi manual
+
+@copying
+Copyright 2016 Héctor Lahoz
+@end copying
+
+@contents
+
+@dircategory Emacs
+@direntry
+* lyqi: (lyqi-mode). Write lilypond files within Emacs.
+@end direntry
+@ifnottex
+@node Top
+@top lyqi - LilyPond quick insert mode
+This manual describes and shows how to use lyqi-mode (LilyPond quick
+insert mode). Lyqi is an Emacs major mode, derived from LilyPond-mode,
+and inspired by its LilyPond-quick-note-insert functionality, which
+aims at saving key strokes during note entry: a note is inserted with
+a single key stroke, its length, octave, alteration, being deduced
+thanks to previous notes; length, octave and alteration can be
+modified wherever and whenever by single key strokes.
+
+@menu
+* Overview::        Overview
+* Installing lyqi:: How to install
+* Using lyqi::      How to use lyqi
+* Indices::         Function and key indices
+@end menu
+@end ifnottex
+
+@node Overview, Installing lyqi, Top, Top
+@chapter Overview
+@section About lyqi
+lyqi-mode (LilyPond quick insert mode) is an Emacs major mode,
+derived from LilyPond-mode, and inspired by its
+LilyPond-quick-note-insert functionality, which aims at
+saving key strokes during note entry: a note is inserted with a single
+key stroke, its length, octave, alteration, being deduced thanks to
+previous notes; length, octave  and alteration can be
+modified wherever and whenever by single key strokes.
+
+Example:
+@multitable {key strokes}{sol8 la8 sib8. do'32 sib32}
+@headitem
+key strokes@tab output
+@item
+f@tab sol4 
+@item
+k@tab sol8 
+@item
+g@tab sol8 la8 
+@item
+c@tab sol8 la8 si8 
+@item
+s@tab sol8 la8 sib8 
+@item
+p@tab sol8 la8 sib8. 
+@item
+e@tab sol8 la8 sib8. do'8. 
+@item
+;/ñ@tab sol8 la8 sib8. do'32 
+@item
+c@tab sol8 la8 sib8. do'32 sib32 
+@item
+j@tab sol8 la8 sib8. do'32 sib4 
+@end multitable
+
+lyqi has some advantages over more sofisticated frontends like
+@uref{http://www.frescobaldi.org/, frescobaldi} because it is
+lightweight. To use it you just need Emacs which runs even without a
+graphical window system.
+
+If you don't know GNU LilyPond, please visit its
+@uref{http://lilypond.org, homepage}. Many thanks to its authors,
+Han-Wen Nienhuys and Jan Nieuwenhuizen, and its contributors.
+
+@section Features
+@table @samp
+@item note insertion / modification
+Use your computer keyboard as a piano keyboard to insert
+notes. Length, octave, alteration are automatically chosen thanks
+to previous notes. You can then modify these caracteristics with
+dedicated keys. You can also modify a previously inserted note:
+just move the cursor after the note, and press modification keys.
+@item tuplets, ornaments, marks
+In lyqi-mode, the whole keyboard is redefined in
+order to ease note entry, ie you cannot type random text as in a
+regular emacs mode. However, ornaments, marks, etc, are taken into
+account and can be easily inserted.
+@item midi playing
+Notes are played when inserted or modified. Play back on a whole
+region can also be performed. You can use ALSA or the PC speaker.
+@item language
+Several note languages are supported: nederlands english
+deutsch norsk svenska italiano catalan espanol. The user can
+customize the default language to use, and eventually switch
+between languages, or change the language used in a region.
+@item output octave mode
+Both octave modes supported by LilyPond (relative and absolute)
+are proposed in lyqi-mode. The default is absolute,
+but the user customize that property. A change of octave mode
+(relative / absolute) can also be executed on a region.
+@item transposition
+Note transpositions can be done on whole regions.
+@item MIDI keyboard
+Thanks to @uref{http://www.volny.cz/smilauer/rumor,rumor},
+a "monophonic MIDI keyboard to Lilypond converter", the user can
+use its midi keyboard for note input, and see the notes
+automatically inserted in the buffer. Rumor is also convenient for
+bad keyboard players (like me), thanks to its flat
+option: one hand on the MIDI keyboard, to insert notes, and the
+other on the computer keyboard, to eventually adjust note
+durations.
+@item Automamtic lyrics hyphenation
+lyqi can take some text and separate it in syllables automatically.
+This can be used to align lyrics with notes easily. @xref{alh,,lyrics hyphenation}.
+@end table
+
+@section News
+@findex lyqi:transpose-interval-region
+@itemize
+@item 2004-03-14
+Version 0.2.5: various suggestions and patches by Reuben
+Thomas, including an alternate transposition command
+@code{lyqi-transpose-interval-region}.
+Rumor related custom variables are now named
+@code{lyqi:rumor-default-...}. Now uses rumor 1.0.3.
+
+@item 2004-01-04
+Version 0.2.4: lyqi can now use an already running timidity
+demon (custom variables are
+@code{lyqi:midi-use-external-timidity-server} and
+@code{lyqi:midi-external-timidity-port}, which can be set with the
+@findex lyqi:midi-set-timidity-alsa-port
+command). Compatibility with elder EIEIO versions, thanks to
+Ferenc Wagner. Bug fix: Lyqi remembers the previously chosen
+language when back to lyqi-mode.
+  
+@item 2003-09-27
+Version 0.2.3: supports rumor 1.0.2a. New commands to change
+rumor parameters (the prefix key for rumor commands is @code{C-cr}).
+@kbd{C-c r s} to start, @code{SPC} to
+stop, see reference for custom.
+  
+@item 2003-09-13
+Version 0.2.2: supports rumor
+(start: @kbd{C-c r}, stop: SPC).
+`n' sets the last note alteration to natural, `=' resets the note
+octave.
+
+@item 2003-08-01
+Version 0.2.1: now, works also in XEmacs.
+
+@item 2003-07-28
+Version 0.2 released.
+@end itemize
+
+@node Installing lyqi, Using lyqi, Overview, Top
+@chapter Installation
+We strongly recommend you to use a prepackaged version
+if it is available for your operating system.
+You can find at least a Debian package.
+
+Anyway, if there's no package for your system you can always build
+the lyqi package yourself.
+
+@section Building
+If you decide to build lyqi yourself there are some build requirements.
+Lyqi uses GNU autoconf so it should work in any Unix-like system.
+You will need some standard tools like @command{awk} and @command{find}.
+
+@section Debian package
+If you happen to be a happy Debian user you just have to download the binary
+package and type at the command prompt:
+@kbd{dpkg -i <package>}
+where <package> is the name of the package (something like
+``lyqi-mode-0.2.deb''. Remember that you must have root privileges.
+@section Run-time dependencies
+For the function ly:hyphenate-lyrics to work properly you need some
+pattern dictionaries. These pattern dictionaries are language specific.
+If you use TeX you probably have them already installed.
+
+lyqi-mode depends on EIEIO, "an Emacs lisp program which implements a
+controlled object-oriented programming methodology following the CLOS
+standard". Since version 23, EIEIO is bundled with Emacs so if you use
+Emacs 23 or newer you don't have to do anything but if your Emacs
+version is older than 23, you'll have to install the EIEIO package.
+
+lyqi can use the same files that TeX uses. They can be found in the
+package hyph-utf8 that you can find @uref{https://www.ctan.org/tex-archive/language/hyph-utf8, here}
+
+@node Using lyqi, Indices, Installing lyqi, Top
+@chapter Using lyqi
+@findex lyqi-mode
+@kindex C-c q
+In order to start lyqi-mode, visit a .ly file in Emacs. LilyPond-mode
+should be then started. Type @kbd{C-c q} or M-x lyqi-mode to switch to
+lyqi-mode. Note that C-c q let you switch back to regular
+LilyPond-mode.
+
+In the following, I use italiano as a language for notes, (a) because
+la-si-do notes are my mother tongue in music, and (b) in order to
+emphasize key stroke save, and (c) to avoid confusion between keys and
+notes.
+
+All key bindings described here are default bindings, but they can be
+redefined by the user (this is Emacs!).
+@menu
+* Note entry::
+* Note playback::      How to set up note playback to hear as you type
+* Lyrics hyphenation:: Automatic lyrics hyphenation
+* Templates::
+@end menu
+
+@node Note entry, Note playback, Using lyqi, Using lyqi
+@section Note entry
+In order to start lyqi-mode, visit a .ly file in Emacs. LilyPond-mode
+should be then started. Type C-c q or M-x lyqi-mode to switch to
+lyqi-mode. Note that C-c q let you switch back to regular
+LilyPond-mode.
+
+In the following, I use italiano as a language for notes, (a) because
+la-si-do notes are my mother tongue in music, and (b) in order to
+emphasize key stroke save, and (c) to avoid confusion between keys and
+notes.
+
+All key bindings described here are default bindings, but they can be
+redefined by the user (this is Emacs!).
+
+@subsection Pitch
+@kindex e
+@kindex r
+@kindex t
+@kindex d
+@kindex f
+@kindex g
+@kindex e
+@kindex c
+@kindex v
+@kindex b
+Notes are inserted by specifying their pitch. Use your computer
+keyboard as a mini piano keyboard. Rests are inserted with the v key,
+and spacers with the b key.
+@float Figure,
+ |  | | | |  |  | | | | | |  |@*
+ |  | | | |  |  | | | | | |  |@*
+ |  |_| |_|  |  |_| |_| |_|  |@*
+ |   |   |   |   |   |   |   |@*
+ | e | r | t | d | f | g | c |@*
+ |___|___|___|___|___|___|___|@*
+@end float
+
+@example
+@group
+q w @strong{e r t} y u i o p
+ a s @strong{d f g} h j k l ;
+  z x @strong{c v b} n m , . -
+@end group
+@end example
+To alterate a note, type the w and s keys to flatten or sharpen the note. Note that they are chosen not to be reminders (then s would stand for "sharp") but the upper key gets note pitch up and lower gets it down.
+@table @kbd
+@item w
+sharpen note
+@item s
+flatten note
+@end table
+
+@example
+@group
+q @strong{w} e r t y u i o p
+ a @strong{s} d f g h j k l ;
+  z x c v b n m , . -
+@end group
+@end example
+
+When inserting notes, octave is chosen so that the inserted note is the closer in pitch from the preceding (up to a fourth). You change a note octave with comma and quote keys.
+@table @kbd
+@item q
+octave up
+@item a
+octave down
+@end table
+
+@example
+@group
+@strong{q} w e r t y u i o p
+ @strong{a} s d f g h j k l ;
+  z x c v b n m , . -
+@end group
+@end example
+
+By default the notes are inserted in Dutch. If you want to  use other language
+customize the variable @code{lyqi:preferred-languages}.
+
+@subsection Duration
+The first inserted note is a quater note. You change the duration with the number keys, and add/remove dots with the dot key. When you change a note duration, the next inserted note will have the same duration.
+
+@multitable {duration}{111}{111}{111}{111}{111}{111}
+@item
+key@tab i@tab o@tab j@tab k @tab l@tab ;
+@item
+duration@tab 1@tab 2@tab 4@tab 8 @tab 16@tab 32
+@end multitable
+
+@float Figure
+@ @ q w e r t y u i o p@*
+@ @ @ a s d f g h j k l ;@*
+@ @ @ @ z x c v b n m , . -@*
+@end float
+
+For instance, to produce the following output:
+
+r8 sold'8 si'8
+si'4.
+r8 mi'8. si'16
+si'4.
+la'16 sold'16 fad'8. la'16
+sold'16. fad'32 mi'8 r8 
+
+you would type:
+
+@kbd{
+vkfwc
+cjp
+vktapcql
+cjp
+glfdwkpgl
+fpd;tkv
+}
+
+@node Note playback, Lyrics hyphenation, Note entry, Using lyqi
+@section Note playback
+@vindex midi-backend
+To activate note playback customize the variable @code{lyqi:midi-backend}.
+The options are:
+
+@itemize @bullet
+@item ALSA
+@item PC Speaker
+@item Mac OSX (MidiScript)
+@end itemize
+
+Midi note playing, which is optional, requires ALSA >=0.9 and
+TiMidity++. If you use Debian GNU/Linux, you may wish to look at this
+article to install and configure ALSA.
+
+Here is how midi notes are played with lyqi-mode (not very beautyful):
+
+@itemize @bullet
+@item
+timidity is started as a server, with ALSA interface enabled;
+@item
+a basic virtual midi keyboard, mymidikbd, is started. It will read
+pitches and lengths from its standard input, and send the
+corresponding midi events to the ALSA sequencer;
+@item
+when the user inserts a note in the LilyPond file, Emacs writes its
+pitch and length to the keyboard process' standard input. Then a note
+is (hopefully) heard.
+@end itemize
+
+@node Lyrics hyphenation, Templates, Note playback, Using lyqi
+@section Hyphenate lyrics automatically
+@kindex C-c C-h
+@findex hyphenate-region
+@anchor{alh}
+To hyphenate lyrics just type the text without hyphens, select it and then
+execute the command @code{ly-hyphenate-region}. By default its key binging
+is @kbd{C-c C-h}.
+
+@node Templates,, Lyrics hyphenation, Using lyqi
+@section visiting new files
+@cindex Templates
+@findex tempo-template-SATB-skeleton
+When you are creating a new file from scratch you can use one of the predefined
+templates.
+
+lyqi uses tempo to define templates so the commands to insert a template are
+of the form: @code{tempo-template-*}
+
+The available templates are:
+
+@itemize
+@item SATB: command @code{tempo-template-SATB-skeleton}
+@item Voice with piano: command @code{tempo-template-voice-with-piano-skeleton}
+@end itemize
+
+@node Indices,, Using lyqi, Top
+@printindex fn
+
+@printindex ky
+
+@printindex vr
+@bye

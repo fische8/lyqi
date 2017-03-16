@@ -1,0 +1,789 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
+<title>lyqi -- LilyPond quick insert mode</title>
+<style type="text/css">
+a { text-decoration: none; color: #666666; }
+a:hover {text-decoration: underline;}
+pre { background-color: #ffeedd; width: 50em;}
+pre.keyboard-diagram {
+  background-color: transparent;
+  font-size: 200%
+}
+
+div.l1 {
+  font-size: 100%;
+  margin-top: 1ex;
+}
+div.l2 {
+  font-size: 90%;
+  margin-left: 1em;
+}
+.l1 a {
+  text-decoration: none;
+  color: #333333;
+}
+.l1 a:hover {text-decoration: underline;}
+.l2 a {
+  text-decoration: none;
+  color: #660000;
+}
+.l2 a:hover {text-decoration: underline;}
+
+div.main {
+  background: white;
+  border: 1px #660000 solid;
+  top: 0.1em;
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+h1 { font-weight: normal; }
+h1 a { color: #660000; }
+h2 {
+  font-weight: normal;
+  color: #660000;
+  border-top: 2px #660000 solid;
+  margin-top: 40px;
+}
+h2 a { color: #660000; }
+h3 {
+  font-weight: normal;
+  color: #660000;
+  border-top: 1px #660000 solid;
+}
+h3 a { color: #660000; }
+
+dd { margin-bottom: 5px;}
+</style>
+</head>
+
+<body>
+
+<div class="contents">Contents
+<div class="l1"><a href="#overview">Overview</a></div>
+<div class="l2"><a href="#quick intro">Quick intro</a></div>
+<div class="l2"><a href="#features">Features</a></div>
+<div class="l2"><a href="#news">News</a></div>
+<div class="l1"><a href="#installation">Installing lyqi</a></div>
+<div class="l2"><a href="#requirements">Requirements</a></div>
+<div class="l2"><a href="#download">Download</a></div>
+<div class="l2"><a href="#emacsmode">Emacs mode</a></div>
+<div class="l2"><a href="#midi">Midi</a></div>
+<div class="l1"><a href="#userdoc">Using lyqi</a></div>
+<div class="l2"><a href="#noteentry">Note entry</a></div>
+<div class="l2"><a href="#rumor">Rumor session</a></div>
+<div class="l2"><a href="#ornaments">Ornaments</a></div>
+<div class="l2"><a href="#transformations">Transformations</a></div>
+<div class="l2"><a href="#playback">Play back</a></div>
+<div class="l2"><a href="#custom">Custom</a></div>
+<div class="l1"><a href="#reference">reference</a></div>
+
+<a href="mailto:nicolas.sceaux@free.fr">contact</a>
+</div>
+
+<div class="main">
+<h1><a name="overview">lyqi -- LilyPond quick insert mode</a></h1>
+<h2><a name="quick intro">Quick intro</a></h2>
+<p><code>lyqi-mode</code> (LilyPond quick insert mode) is an <a href="http://www.gnu.org/software/emacs/">Emacs</a> major mode,
+derived from <code>LilyPond-mode</code>, and inspired by its
+<code>LilyPond-quick-note-insert</code> functionality, which aims at
+saving key strokes during note entry: a note is inserted with a single
+key stroke, its length, octave, alteration, being deduced thanks to
+previous notes; length, octave  and alteration can be
+modified wherever and whenever by single key strokes.</p>
+
+<p>Example:</p>
+<table border="0">
+  <thead>
+    <tr><th>key strokes</th><th>output</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr><td>f</td><td>sol4 </td></tr>
+  <tr><td>k</td><td>sol8 </td></tr>
+  <tr><td>g</td><td>sol8 la8 </td></tr>
+  <tr><td>c</td><td>sol8 la8 si8 </td></tr>
+  <tr><td>s</td><td>sol8 la8 sib8 </td></tr>
+  <tr><td>p</td><td>sol8 la8 sib8. </td></tr>
+  <tr><td>e</td><td>sol8 la8 sib8. do'8. </td></tr>
+  <tr><td>;(ñ)</td><td>sol8 la8 sib8. do'32 </td></tr>
+  <tr><td>c</td><td>sol8 la8 sib8. do'32 sib32 </td></tr>
+  <tr><td>j</td><td>sol8 la8 sib8. do'32 sib4 </td></tr>
+  </tbody>
+</table>
+
+<p>If you don't know GNU LilyPond, please visit its <a href="http://lilypond.org/">homepage</a>. Many thanks to its authors,
+Han-Wen Nienhuys and Jan Nieuwenhuizen, and its contributors.</p>
+
+<h2><a name="features">Features</a></h2>
+<dl>
+  <dt>note insertion / modification</dt>
+  <dd>Use your computer keyboard as a piano keyboard to insert
+    notes. Length, octave, alteration are automatically chosen thanks
+    to previous notes. You can then modify these caracteristics with
+    dedicated keys. You can also modify a previously inserted note:
+    just move the cursor after the note, and press modification keys.
+  </dd>
+  <dt>tuplets, ornaments, marks</dt>
+  <dd>In <code>lyqi-mode</code>, the whole keyboard is redefined in
+    order to ease note entry, ie you cannot type random text as in a
+    regular emacs mode. However, ornaments, marks, etc, are taken into
+    account and can be easily inserted.
+  </dd>
+  <dt>midi playing</dt>
+  <dd>Notes are played when inserted or modified. Play back on a whole
+    region can also be performed. Requires ALSA and timidity.
+  </dd>
+  <dt>language</dt>
+  <dd>Several note languages are supported: nederlands english
+    deutsch norsk svenska italiano catalan espanol. The user can
+    customize the default language to use, and eventually switch
+    between languages, or change the language used in a region.
+  </dd>
+  <dt>output octave mode</dt>
+  <dd>Both octave modes supported by LilyPond -- relative and absolute
+    -- are proposed in <code>lyqi-mode</code>. The default is absolute,
+    but the user customize that property. A change of octave mode
+    (relative &lt;--&gt; absolute) can also be executed on a region.
+  </dd>
+  <dt>transposition</dt>
+  <dd>Note transpositions can be done on whole regions.
+  </dd>
+  <dt>MIDI keyboard</dt>
+  <dd>Thanks to <a href="http://www.volny.cz/smilauer/rumor">rumor</a>,
+    a "monophonic MIDI keyboard to Lilypond converter", the user can
+    use its midi keyboard for note input, and see the notes
+    automatically inserted in the buffer. Rumor is also convenient for
+    bad keyboard players (like me), thanks to its <em>flat</em>
+    option: one hand on the MIDI keyboard, to insert notes, and the
+    other on the computer keyboard, to eventually adjust note
+    durations.
+  </dd>
+</dl>
+
+<h2><a name="news">News</a></h2>
+<dl>
+  <dt>2004-03-14</dt>
+  <dd>Version 0.2.5: various suggestions and patches by Reuben
+    Thomas, including an alternate transposition command
+    (<code>lyqi:transpose-interval-region</code>). Rumor related
+    custom variables are now named
+    <code>lyqi:rumor-default-...</code>. Now uses rumor 1.0.3.
+  </dd>
+  <dt>2004-01-04</dt>
+  <dd>Version 0.2.4: lyqi can now use an already running timidity
+    demon (custom variables are
+    <code>lyqi:midi-use-external-timidity-server</code> and
+    <code>lyqi:midi-external-timidity-port</code>, which can be set
+    with the <code>lyqi:midi-set-timidity-alsa-port</code>
+    command). Compatibility with elder eieio versions, thanks to
+    Ferenc Wagner. Bug fix: Lyqi remembers the previously chosen
+    language when back to lyqi-mode.
+  </dd>
+  <dt>2003-09-27</dt>
+  <dd>Version 0.2.3: supports rumor 1.0.2a. New commands to change
+    rumor parameters (the prefix key for rumor commands is <code>C-c
+    r</code>). <code>C-c r s</code> to start, <code>SPC</code> to
+    stop, see reference for custom.
+  </dd>
+  <dt>2003-09-13</dt>
+  <dd>Version 0.2.2: supports <a href="http://www.volny.cz/smilauer/rumor">rumor</a>
+    (start: C-c r, stop: SPC).
+    `n' sets the last note alteration to natural, `=' resets the note
+    octave.
+  </dd>
+  <dt>2003-08-01</dt>
+  <dd>Version 0.2.1: now, works also in XEmacs.</dd>
+  <dt>2003-07-28</dt>
+  <dd>Version 0.2 released.</dd>
+</dl>
+
+<h2><a name="installation">Installing lyqi</a></h2>
+<h2>Installing lyqi in Debian</h2>
+<p>If you happen to be a happy Debian user you just have to download the binary
+package and type at the command prompt:</p>
+<kbd>dpkg -i lyqi_mode_&lt;version&gt;.deb</kbd>
+<p>where &lt;version&gt; is the version of the package. Remember that you must have
+root privileges.</p>
+
+<h2><a name="requirements">requirements</a></h2>
+<p><code>lyqi-mode</code> depends on <a href="http://cedet.sourceforge.net/eieio.shtml">EIEIO</a>,
+"<em>an Emacs lisp program which implements a controlled
+object-oriented programming methodology following the CLOS
+standard</em>". If your Emacs version is older than 23, you'll have to install
+the eieio package. Since Emacs version 23, EIEIO is part of Emacs.</p>
+
+<p>Quality MIDI playback requires <a href="http://www.alsa-project.org/">ALSA</a> &gt;=0.9 and <a href="http://www.onicos.com/staff/iz/timidity/">TiMidity++</a>. If you don't have or want them you can just use your PC internal speaker.</p>
+
+<p>Rumor sessions depends on...  <a href="http://www.volny.cz/smilauer/rumor">rumor</a>
+(&gt;= 1.0.3).</p>
+
+<h2><a name="download">download</a></h2>
+<p>The package homepage is <a href="https://github.com/nsceaux/lyqi">
+https://github.com/nsceaux/lyqi</a>.</p>
+<p><a href="http://nicolas.sceaux.free.fr/lilypond/lyqi-0.2.5.tar.gz">lyqi-0.2.5.tar.gz</a> contains emacs-lisp source files, this documentation, and
+the source file for the virtual midi keyboard used for play-back.</p>
+
+<h2><a name="emacsmode">emacs mode</a></h2>
+<ol>
+  <li>Download and extract the archive in a temporary directory. Move
+  emacs lisp files (<code>.el</code>) to a relevant directory, for
+  instance <code>~/.elisp/lyqi/</code>.
+  <pre>$ cd /tmp
+$ tar zxf lyqi.tar.gz
+$ cd lyqi
+$ mkdir -p ~/.elisp/lyqi
+$ mv *.el ~/.elisp/lyqi</pre>
+  </li>
+  <li>Then, edit your <code>.emacs</code> file:
+  <pre>;;--------- .emacs -----------
+;; adds ~/.elisp/lyqi in the load path
+(setq load-path (cons (expand-file-name "~/.elisp/lyqi") load-path))
+
+;; when loading LilyPond-mode, lyqi-mode library will also be loaded.
+;; type `C-c q' in LilyPond-mode to switch to lyqi-mode.
+(eval-after-load "lilypond-mode"
+  '(progn
+     (load-library "lyqi-mode")
+     (define-key LilyPond-mode-map "\C-cq" 'lyqi-mode)))</pre>
+  </li>
+  <li>Finally, byte-compile elisp files:
+  <pre>$ emacs -batch -u &lt;username&gt; -f batch-byte-compile ~/.elisp/lyqi/*.el</pre>
+  </li>
+</ol>
+
+<h2><a name="midi">midi</a></h2>
+<p>Midi note playing, which is optional, requires <a href="http://www.alsa-project.org/">ALSA</a> &gt;=0.9 and <a href="http://www.onicos.com/staff/iz/timidity/">TiMidity++</a>. If you
+use Debian GNU/Linux, you may wish to look at <a href="http://www.linuxorbit.com/modules.php?op=modload&amp;name=Sections&amp;file=index&amp;req=viewarticle&amp;artid=541">this
+article</a> to install and configure ALSA.</p>
+
+<p>Here is how midi notes are played with <code>lyqi-mode</code> (not
+very beautyfull):</p>
+<ul>
+  <li>timidity is started as a server, with ALSA interface
+  enabled;</li>
+  <li>a basic virtual midi keyboard, <code>mymidikbd</code>, is
+  started. It will read pitches and lengths from its standard input,
+  and send the corresponding midi events to the ALSA sequencer;</li>
+  <li>when the user inserts a note in the LilyPond file, Emacs writes
+  its pitch and length to the keyboard process' standard input. Then a
+  note is (hopefully) heard.</li>
+</ul>
+<p>In order to enable this feature, we will compile and install the
+little virtual midi keyboard:</p>
+<pre>$ cd /tmp/lyqi   # or wherever the archive is extracted
+$ make
+gcc -Wall -O   -c -o mymidikbd.o mymidikbd.c
+gcc -lasound  mymidikbd.o   -o mymidikbd
+$ mkdir -p ~/bin
+$ mv mymidikbd ~/bin</pre>
+
+<p>Then, you may test if it works:</p>
+<ol>
+  <li>in a shell, start timidity as a demon with ALSA interface
+  enabled:
+  <pre>$ timidity -iA -B2,8 -Os -EFreverb=0
+Requested buffer size 2048, fragment size 1024
+ALSA pcm 'default' set buffer size 2048, period size 1024 bytes
+TiMidity starting in ALSA server mode
+can't set sched_setscheduler - using normal priority
+Opening sequencer port: 133:0 133:1</pre>
+  Here we see that it has been started using sequencer port 133;
+  </li>
+  <li>in an other shell, run <code>mymidikbd</code>, with the port
+  number given as the first argument:
+  <pre>$ ~/bin/mymidikbd 133</pre></li>
+  <li><code>mymidikbd</code> waits for pitches and length (in seconds)
+written in standard input. So type two numbers and press RETURN :
+  <pre>$ ~/bin/mymidikbd 133
+50 0.25 RET
+52 0.25 RET</pre>
+  If you can hear notes, then it works. <code>^d</code> (EOF) stops
+  the program.</li>
+</ol>
+
+<h2><a name="userdoc">Using lyqi</a></h2>
+<p>In order to start <code>lyqi-mode</code>, visit a <code>.ly</code>
+file in Emacs. <code>LilyPond-mode</code> should be then started. Type
+<code>C-c q</code> or <code>M-x lyqi-mode</code> to switch to
+<code>lyqi-mode</code>. Note that <code>C-c q</code> let you switch
+back to regular <code>LilyPond-mode</code>.</p>
+
+<p>In the following, I use <code>italiano</code> as a language for
+notes, (a) because la-si-do notes are my mother tongue in music, and
+(b) in order to emphasize key stroke save, and (c) to avoid confusion
+between keys and notes.</p>
+
+<p>All key bindings described here are default bindings, but they can
+be redefined by the user (this is Emacs!).</p>
+
+<h2><a name="noteentry">note entry</a></h2>
+<p>Notes are inserted by specifying their pitch. Use your computer
+keyboard as a mini piano keyboard. Rests are inserted with
+the <code>v</code> key, and spacers with the <code>b</code> key.</p>
+
+<pre class="keyboard-diagram" style="line-height: 0.9; letter-spacing: -0.2em">
+ |  | | | |  |  | | | | | |  |
+ |  | | | |  |  | | | | | |  |                  q w <span style="color: red">e r t</span> y u i o p
+ |  |_| |_|  |  |_| |_| |_|  |       --->        a s <span style="color: red">d f g</span> h j k l ;
+ |   |   |   |   |   |   |   |                    z x <span style="color: red">c v b</span> n m , . -
+ | e | r | t | d | f | g | c |
+ |___|___|___|___|___|___|___|</pre>
+
+<p>To alterate a note, type the <code>w</code> and <code>s</code> keys
+to flatten or sharpen the note. Note that they are chosen not to be
+reminders (then s would stand for "sharp") but the upper key gets note
+pitch up and lower gets it down.
+<table border="1" cellpadding="5">
+  <tbody>
+  <tr><td>w</td><td>sharpen note</td></tr>
+  <tr><td>s</td><td>flatten note</td></tr>
+  </tbody>
+</table>
+<pre class="keyboard-diagram">
+      q <span style="color: red">w</span> e r t y u i o p  
+--->   a <span style="color: red">s</span> d f g h j k l ;
+        z x c v b n m , . -
+</pre>
+</p>
+<p>When inserting notes, octave is chosen so that the inserted note is
+the closer in pitch from the preceding (up to a fourth). You change a
+note octave with comma and quote keys.</p>
+<table border="1" cellpadding="5">
+  <tbody>
+  <tr><td>q</td><td>octave up</td></tr>
+  <tr><td>a</td><td>octave down</td></tr>
+  </tbody>
+</table>
+<pre class="keyboard-diagram">
+      <span style="color: red">q</span> w e r t y u i o p  
+--->   <span style="color: red">a</span> s d f g h j k l ;
+        z x c v b n m , . -
+</pre>
+</p>
+<p>The first inserted note is a quater note. You change the duration
+with the number keys, and add/remove dots with the dot key. When you
+change a note duration, the next inserted note will have the same
+duration.</p>
+<p>
+<table border="1" cellpadding="5">
+  <tbody>
+  <tr><td>key</td><td>i</td><td>o</td><td>j</td><td>k</td>
+  <td>l</td><td>;</td></tr>
+  <tr><td>duration</td><td>1</td><td>2</td><td>4</td><td>8</td>
+  <td>16</td><td>32</td></tr>
+  </tbody>
+</table>
+<pre class="keyboard-diagram">
+      q w e r t y u <span style="color: red">i o p</span>  
+--->   a s d f g h <span style="color: red">j k l ;</span>
+        z x c v b n m , . -
+</pre>
+</p>
+
+<p>For instance, the following key sequence:
+</p><pre>vkfwc
+cjp
+vktapcql
+cjp
+glfdwkpgl
+fpd;tkv</pre>
+produces the following output:
+<pre>r8 sold'8 si'8
+si'4.
+r8 mi'8. si'16
+si'4.
+la'16 sold'16 fad'8. la'16
+sold'16. fad'32 mi'8 r8 </pre>
+<p></p>
+
+<h2><a name="rumor">rumor session</a></h2>
+<p>A rumor session is started by typing <code>C-c r s</code>.
+Press <code>SPC</code> to stop the recording session.</p>
+
+<p>Rumor options can be set thanks to custom variables (which are only
+read when loading the <code>lyqi-mode</code>), or interactively thanks
+to commands:</p>
+
+<table border="1" cellpadding="5">
+  <tbody>
+  <tr><th>custom variable</th><th>key</th><th>description</th></tr>
+  <tr>
+    <td><code>lyqi:rumor-default-grain</code></td>
+    <td><code>C-c&nbsp;r&nbsp;g</code></td>
+    <td>Set minimum time resolution to the NUMth
+      note. Only powers of two are valid, from 1 up to 128.
+    </td>
+  </tr>
+  <tr>
+    <td><code>lyqi:rumor-default-tempo</code></td>
+    <td><code>C-c&nbsp;r&nbsp;t</code></td>
+    <td>Metronome speed in beats per minute. </td>
+  </tr>
+  <tr>
+    <td><code>lyqi:rumor-default-legato</code></td>
+    <td><code>C-c&nbsp;r&nbsp;l</code></td>
+    <td>If true, ignore any rests between notes. </td>
+  </tr>
+  <tr>
+    <td><code>lyqi:rumor-default-no-dots</code></td>
+    <td><code>C-c&nbsp;r&nbsp;d</code></td>
+    <td>If true, do not use dotted notes. </td>
+  </tr>
+  <tr>
+    <td><code>lyqi:rumor-default-flat</code></td>
+    <td><code>C-c&nbsp;r&nbsp;f</code></td>
+    <td>If true, output only pitches as you play, no lengths.</td>
+  </tr>
+  <tr>
+    <td><code>lyqi:rumor-default-meter</code></td>
+    <td><code>C-c&nbsp;r&nbsp;m</code></td>
+    <td>"P/Q". Set time signature. Bar will have P beats of duration
+      of the Qth note. Q must be a power of two.
+    </td>
+  </tr>
+  <tr>
+    <td><code>lyqi:rumor-default-key</code></td>
+    <td><code>C-c&nbsp;r&nbsp;k</code></td>
+    <td>Set base note of current scale.
+    Valid values for KEY are "ces", "c", "cis", "des", .... Double
+    sharps/flats are not allowed. Note that KEY has to be given using
+    note language `nederlands'.
+    </td>
+  </tr>
+  </tbody>
+</table>
+<p>Note: When setting a rumor parameter with one of these commands,
+rumor's behaviour will be changed the next time you launch it, ie
+setting a rumor argument during a rumor session will have no effect on
+the running session.</p>
+
+<h2><a name="ornaments">ornaments, marks</a></h2>
+<p>Some keys are self inserting : <code>~ ( ) &lt; &gt; { } [ ] |
+SPACE</code>, ie when the user hits the tilde key, a <code>~</code>
+character is inserted. These characters are used for beams, slurs,
+ties, chords, bars, ie are frequently used.</p>
+
+<p>Some LilyPond commands, in particular articulations, are a
+combinaison of two characters: a prefix <code>-</code> or
+<code>_</code> or <code>^</code>, and the command itself, for instance
+<code>do^.</code> for a staccato do. To achieve that in
+<code>lyqi-mode</code>, press the prefix key <code>-</code> or
+<code>_</code> or <code>^</code>, then the second (whetever)
+character. The backslash has also this behaviour, in order to write
+<code>\\</code> or <code>\p</code>, for instance.</p>
+
+<p>These prefix characters can also be followed by longer strings, for
+example <code>do^\trill</code>. This is done, in
+<code>lyqi-mode</code>, by typing the sequence
+<code>C-&lt;prefix-key&gt;</code>, then the command string, then
+RETURN. The sharp and double quote keys also have this behaviour.</p>
+
+<p>Example:</p>
+<table border="1" cellpadding="5">
+  <tbody>
+  <tr><td><code>d8-_[f^.]</code></td><td><code>do'8 -_[ re'8^. ]</code></td></tr>
+  <tr><td><code>d1 C-c ^ \fermata RET</code></td><td><code>do'1^\fermata</code></td></tr>
+  <tr><td><code>d \p</code></td><td><code>do'1 \p</code></td></tr>
+  </tbody>
+</table>
+
+<h2><a name="transformations">transformations</a></h2>
+Transformations can be accomplished on a whole region: transposition,
+octave mode change, language change.
+
+<p>To transpose a region of notes, select it and type <code>C-c
+C-t</code>, or <code>M-x lyqi:transpose-region</code>. You will be
+asked the destination note, <em>do</em> being the reference: enter the
+note (in LilyPond language) and press RET. The notes contained in the
+region are then replaced by the transposed notes, non-notes being
+hopefully left untouched.</p>
+
+<p>For instance, in order to have a <em>do</em> transposed to the
+<em>la</em> below, the note to tell (with <code>italiano</code>
+language) will be <code>la,</code>. Suppose your LilyPond source file
+contains the following line:</p>
+<pre>do'8 mi'8 sol'8 sol8 do'2 </pre>
+<p>Select the line, type <code>C-c C-t</code> and then <code>la,
+RET</code>. This will produce the output:</p>
+<pre>la8 dod'8 mi'8 mi8 la2 </pre>
+
+<p>The <code>lyqi:transpose-interval-region</code> command expects an
+interval, for instance <code>2-</code> in order to transpose a note 2
+notes below.</p>
+
+<p>The <code>lyqi:change-language-region</code> command aims at
+changing the language used for notes in the selected region. The user
+is asked the source (default: current language) and destination
+languages.</p>
+
+<p>Finally, the <code>lyqi:relative-to-absolute-region</code> and
+<code>lyqi:absolute-to-relative-region</code> change octave mode used
+in region and rewrite notes accordingly.</p>
+
+<h2><a name="playback">play back</a></h2>
+<p>Notes can be played when inserted. To enable this feature, type
+<code>C-c m</code> or <code>M-x lyqi:midi-start-stop</code>.</p>
+
+<p>A whole region of notes can also be played: select a region and
+type <code>C-c p</code> or <code>M-x
+lyqi:play-back-region</code>. Note that this feature is quite
+rudimentary. Encoutered notes are played sequentially, even if they
+are part of a chord. It is mostly provided for ear-checking of small
+parts.</p>
+
+<p>If your system already runs a timidity demon, you may turn the
+custom variable <code>lyqi:midi-use-external-timidity-server</code> to
+<code>t</code>. The default ALSA sequencer port used by such a server
+should be 128. To change it, set the
+<code>lyqi:midi-external-timidity-port</code> custom variable in your
+<code>.emacs</code> file or use the <code>M-x
+lyqi-midi-set-timidity-alsa-port</code> command.</p>
+
+<h2><a name="custom">custom</a></h2>
+Some properties may be customized:
+
+<dl>
+  <dt>lyqi-self-inserting-keys</dt>
+  <dd>Self inserting characters (a string). When the user hits one of these keys,
+    the corresponding character is inserted. Default:
+    <code>"()&lt;&gt;~{}|[] "</code>
+  </dd>
+  <dt>lyqi-self-inserting-+-char-keys</dt>
+  <dd>A string. When the user hits one of these keys, the
+    corresponding character is inserted, plus an extra character,
+    asked to the user. Default: <code>"-_^\\"</code>
+  </dd>
+  <dt>lyqi-self-inserting-+-string-keys</dt>
+  <dd>A <em>(character key &amp;optional end)</em> list. When the user
+    hits <em>key</em>, <em>character</em> is inserted, plus a string,
+    asked to the user. If <em>end</em> is provided, it is finally
+    inserted. Default: <code>'((?- "\C-c-") (?_ "\C-c_") (?^ "\C-c^")
+    (?\\ "\C-c\\") (?# "#") (?\" "\"" "\""))</code>
+  </dd>
+  <dt>lyqi:force-duration</dt>
+  <dd>Force durations to be written when inserting a note, rest or
+    skip, even if previous word has the same duration. Default:
+    <code>t</code>
+  </dd>
+  <dt>lyqi:relative-octave-default</dt>
+  <dd>If non-nil, enables relative octave mode at startup. Default:
+    <code>nil</code>
+  </dd>
+  <dt>lyqi:default-language</dt>
+  <dd>Default language used to write note names. Default:
+    <code>'nederlands</code>
+  </dd>
+  <dt>lyqi:midi-demon-command</dt>
+  <dd>Command used to start the midi daemon. Default: <code>"timidity
+    -iA -B2,8 -Os -EFreverb=0"</code>
+  </dd>
+  <dt>lyqi:midi-keyboard-command</dt>
+  <dd>Command used to start the midi keyboard process. Default:
+    <code>"mymidikbd"</code>
+  </dd>
+  <dt>lyqi:midi-enabled-default</dt>
+  <dd>If non-nil, enables midi playing by default. Default:
+    <code>nil</code>.
+  </dd>
+  <dt>lyqi:midi-use-external-timidity-server</dt>
+  <dd>If true, don't start a timidity server, but use an already
+    running one. Default: <code>nil</code>.
+  </dd>
+  <dt>lyqi:midi-external-timidity-port</dt>
+  <dd>The ALSA sequencer port used by the already running timidity
+    demon. Default: <code>128</code>.
+  </dd>
+</dl>
+Example:
+<pre>-------- .emacs ---------
+;; ...
+
+(custom-set-variables
+ ;; other custom variables...
+
+ '(lyqi-default-language 'italiano)
+ '(lyqi-midi-keyboard-command "~/bin/mymidikbd")
+ '(lyqi-midi-use-external-timidity-server t) ; timidity demon always running
+ '(lyqi-midi-enabled-default t))
+-------------------------
+</pre>
+<h2><a name="reference">reference</a></h2>
+
+<h4>Rests, skips</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr><td>v</td><td>lyqi:insert-rest</td><td>Insert a rest at point.</td></tr>
+    <tr><td>b</td><td>lyqi:insert-spacer</td><td>Insert a spacer rest at point.</td></tr>
+  </tbody>
+</table>
+
+<h4>Note pitches</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr><td>e</td><td>lyqi:insert-note-c</td><td>Insert a new do / c note at point.</td></tr>
+    <tr><td>r</td><td>lyqi:insert-note-d</td><td>Insert a new re / d note at point.</td></tr>
+    <tr><td>t</td><td>lyqi:insert-note-e</td><td>Insert a new mi / e note at point.</td></tr>
+    <tr><td>d</td><td>lyqi:insert-note-f</td><td>Insert a new fa / f note at point.</td></tr>
+    <tr><td>f</td><td>lyqi:insert-note-g</td><td>Insert a new sol / g note at point.</td></tr>
+    <tr><td>g</td><td>lyqi:insert-note-a</td><td>Insert a new la / a note at point.</td></tr>
+    <tr><td>c</td><td>lyqi:insert-note-b</td><td>Insert a new si / b note at point.</td></tr>
+    <tr><td>w</td><td>lyqi:change-alteration-up</td><td>Increase, if possible, the last note alteration.</td></tr>
+    <tr><td>s</td><td>lyqi:change-alteration-down</td><td>Decrease, if possible, the last note alteration.</td></tr>
+    <tr><td>q</td><td>lyqi:change-octave-up</td><td>Increase the last note octave.</td></tr>
+    <tr><td>a</td><td>lyqi:change-octave-down</td><td>Decrease the last note octave.</td></tr>
+  </tbody>
+</table>
+
+<h4>Lengths</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr><td>i</td><td>lyqi:change-duration-1</td><td>Change the previous word duration to 1.</td></tr>
+    <tr><td>o</td><td>lyqi:change-duration-2</td><td>Change the previous word duration to 2.</td></tr>
+    <tr><td>j</td><td>lyqi:change-duration-4</td><td>Change the previous word duration to 4.</td></tr>
+    <tr><td>k</td><td>lyqi:change-duration-8</td><td>Change the previous word duration to 8.</td></tr>
+    <tr><td>l</td><td>lyqi:change-duration-16</td><td>Change the previous word duration to 16.</td></tr>
+    <tr><td>;</td><td>lyqi:change-duration-32</td><td>Change the previous word duration to 32.</td></tr>
+    <tr><td>p</td><td>lyqi:change-dots</td><td>Increase modulo 5 the previous word dot number.</td></tr>
+  </tbody>
+</table>
+
+<h4>Accidentals</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr><td>!</td><td>lyqi:change-reminder-alt</td><td>Change the last note's reminder alteration state.</td></tr>
+    <tr><td>?</td><td>lyqi:change-cautionary-alt</td><td>Change the last note's cautionary alteration state.</td></tr>
+  </tbody>
+</table>
+
+<h4>Rumor recording session</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr><td>C-c r s</td><td>lyqi:rumor-session-start</td><td>Start a rumor session. Press SPC to stop the session</td></tr>
+    <tr><td>SPC</td><td>lyqi:rumor-session-stop</td><td>Stop a running rumor session.</td></tr>
+    <tr><td>C-c r g</td><td>lyqi:rumor-set-grain</td><td>Set rumor's grain.</td></tr>
+    <tr><td>C-c r t</td><td>lyqi:rumor-set-tempo</td><td>Set rumor's tempo.</td></tr>
+    <tr><td>C-c r l</td><td>lyqi:rumor-set-legato</td><td>Change rumor's legato parameter.</td></tr>
+    <tr><td>C-c r d</td><td>lyqi:rumor-set-no-dots</td><td>Change rumor's no-dots parameter.</td></tr>
+    <tr><td>C-c r f</td><td>lyqi:rumor-set-flat</td><td>Change rumor's flat parameter.</td></tr>
+    <tr><td>C-c r m</td><td>lyqi:rumor-set-meter</td><td>Set rumor's meter.</td></tr>
+    <tr><td>C-c r k</td><td>lyqi:rumor-set-key</td><td>Set rumor's key.</td></tr>
+    <tr><td>C-c r p</td><td>lyqi:rumor-set-alsa-port</td><td>Set rumor's alsa-port.</td></tr>
+  </tbody>
+</table>
+
+<h4>Ornaments, marks, etc.</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr><td>~</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>{</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>}</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>|</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>[</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>]</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>&lt;</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>&gt;</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>(</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>)</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>SPC</td><td>self-insert-command</td><td></td></tr>
+    <tr><td>_</td><td>lyqi-_-self-insert-+-char</td><td></td></tr>
+    <tr><td>-</td><td>lyqi---self-insert-+-char</td><td></td></tr>
+    <tr><td>^</td><td>lyqi-^-self-insert-+-char</td><td></td></tr>
+    <tr><td>\</td><td>lyqi-\-self-insert-+-char</td><td></td></tr>
+    <tr><td>C-c _</td><td>lyqi-_-self-insert-+-string</td><td></td></tr>
+    <tr><td>C-c -</td><td>lyqi---self-insert-+-string</td><td></td></tr>
+    <tr><td>C-c ^</td><td>lyqi-^-self-insert-+-string</td><td></td></tr>
+    <tr><td>C-c \</td><td>lyqi-\-self-insert-+-string</td><td></td></tr>
+    <tr><td>#</td><td>lyqi-#-self-insert-+-string</td><td></td></tr>
+    <tr><td>"</td><td>lyqi-"-self-insert-+-string</td><td></td></tr>
+  </tbody>
+</table>
+
+<h4>Transformations</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr><td>C-c C-t</td><td>lyqi-transpose-region</td>
+    <td>Interactively transpose the current region. The user is asked
+      the transposition interval, starting from c/do.</td>
+    </tr>
+    <tr><td>&nbsp;</td><td>lyqi-transpose-interval-region</td>
+    <td>Interactively transpose the current region. The user is asked
+      the transposition interval in tones.</td>
+    </tr>
+    <tr><td>&nbsp;</td><td>lyqi-change-language-region</td>
+    <td>Change note language in region. The user is asked for source
+      and destination languages.</td>
+    </tr>
+    <tr><td>&nbsp;</td><td>lyqi-absolute-to-relative-region</td>
+    <td>Rewrite region with relative octave mode instead of absolute
+      octave mode.</td>
+    </tr>
+    <tr><td>&nbsp;</td><td>lyqi-relative-to-absolute-region</td>
+    <td>Rewrite region with absolute octave mode instead of relative octave mode.
+      An octave transposition may be required afterward.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4>Play back</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr>
+      <td>C-c m</td><td>lyqi-midi-start-stop</td>
+      <td>Start or stop midi playing.</td>
+    </tr>
+    <tr>
+      <td>C-c p</td><td>lyqi-play-back-region</td>
+      <td>If midi is on, play back notes in region.</td>
+    </tr>
+    <tr><td></td><td>lyqi-midi-set-timidity-alsa-port</td>
+    <td>When using an external timidity demon, set its ALSA sequencer
+      port.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4>Editing properties</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr><td>C-c C-l</td><td>lyqi-switch-language</td><td>Select the next output language.</td></tr>
+    <tr><td>C-c o</td><td>lyqi-switch-octave-mode</td><td>Switch between relative and absolute octave modes.</td></tr>
+  </tbody>
+</table>
+
+<h4>Misc</h4>
+<table border="1">
+  <tbody>
+    <tr><th>key</th><th>command</th><th>description</th></tr>
+    <tr><td>C-c h</td><td>lyqi-help</td><td>Display a help message in a dedicated buffer.</td></tr>
+    <tr><td>C-c q</td><td>lyqi-quit</td><td>Quit lyqi-mode, back to LilyPond-mode</td></tr>
+    <tr><td>M-f</td><td>lyqi-word-forward</td>
+    <td>Move to the following note end, if any, otherwise to the end of the
+      following text word.</td>
+    </tr>
+    <tr><td>M-b</td><td>lyqi-word-backward</td>
+    <td>Move to the previous note beginning, if any, otherwise to the beginning of the
+      previous text word.</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+<address></address>
+<!-- hhmts start -->Last modified: Mon Dec  5 02:28:01 CET 2016 <!-- hhmts end -->
+</div>
+
+</body></html>
