@@ -1,0 +1,15 @@
+;;; lyqi-mode.el --- Write lilypond files quickly
+
+;; Copyright (C) 2017 Nicolas Sceaux, Héctor Lahoz
+
+
+;; Author: Nicolas Sceaux
+;;	Héctor Lahoz <hectorlahoz@yahoo.es>
+;; Maintainer: Héctor Lahoz <hectorlahoz@yahoo.es>
+;; Version: @PACKAGE_VERSION@
+;; Keywords: multimedia, lilypond
+
+;;; Commentary:
+;;
+;; An Emacs mode for editing LilyPond files.
+;; It focuses on fast note entry, using the computer keyboard.

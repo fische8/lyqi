@@ -1,14 +1,33 @@
+;; Copyright 2009 Nicolas Sceaux, 2016 Héctor Lahoz
+;;
+;; lp-base.el - incremental lexing and parsing
+;;
+;; This file is part of lyqi.
+;;
+;; lyqi is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; lyqi is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with lyqi.  If not, see <http://www.gnu.org/licenses/>.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;
-;;; Customization
+;;; customization.el - configuration variables (aka. user options)
 ;;;
 
 (defgroup lyqi nil
   "LilyPond quick insert mode."
-  :prefix "lyqi:"
+  :prefix "lyqi-"
   :group 'applications)
 
-(defcustom lyqi:prefered-languages '(nederlands italiano)
+(defcustom lyqi-prefered-languages '(nederlands italiano)
   "Prefered languages for note names.  The first choice is used
 in new files, or when the language of an existing file cannot be
 guessed."
@@ -18,17 +37,17 @@ guessed."
               (const :tag "German" deutsch)
               (const :tag "English" english)))
 
-(defcustom lyqi:keyboard-mapping 'qwerty
+(defcustom lyqi-keyboard-mapping 'qwerty
   "Keyboard mapping, used to associate keys to commands in quick
 insert mode map."
   :group 'lyqi
   :type '(choice (const :tag "AZERTY" azerty)
                  (const :tag "QWERTY" qwerty)))
 
-(defcustom lyqi:custom-key-map nil
+(defcustom lyqi-custom-key-map nil
   "Key/command alist, for customizing the quick insertion mode map.
 
-The keys of the alist are eiter strings or vector meaning a sequence of
+The keys of the alist are either strings or vector meaning a sequence of
 keystrokes, e.g:
    \"a\"   for key a
    \"\\C-ca\" for C-c a
@@ -41,7 +60,7 @@ will be implicitely created;
 - a cons, which car is space-around and cdr is the string to be
 inserted.
 
-For example, if `lyqi:custom-key-map' is set to:
+For example, if `lyqi-custom-key-map' is set to:
 
   '((\"w\" \"\\prall\")
     (\"x\" '(space-around . \"\\appoggiatura\")))
@@ -51,16 +70,16 @@ is inserted, and when pressing \"x\", \\appoggiatura is inserted with
 space around it (unless at the beginning or end of a line).
 
 This variable is normally read when `lyqi-mode' is loaded.  To
-force the redefinition of `lyqi:quick-insert-mode-map', invoke
-command `lyqi:force-mode-map-definition'.
+force the redefinition of `lyqi-quick-insert-mode-map', invoke
+command `lyqi-force-mode-map-definition'.
 "
   :group 'lyqi
   :type '(alist :key-type (choice string vector)
                 :value-type (choice function string alist)))
 
-(defcustom lyqi:projects-language nil
+(defcustom lyqi-projects-language nil
   "Specify which note language use for projects in given directories.
-For instance, if `lyqi:projects-language' is set to:
+For instance, if `lyqi-projects-language' is set to:
 
   '((\"~/src/lilypond\" nederlands)
     (\"~/Documents/MyProjects\" italiano)
@@ -76,26 +95,25 @@ files located in other places in \"~/Documents/MyProjects\"."
                                            (const :tag "German" deutsch)
                                            (const :tag "English" english)))))
 
-(defcustom lyqi:midi-backend nil
-  "Midi backend to use to play notes when entering music in quick insert mode: 'osx or 'alsa"
+(defcustom lyqi-midi-backend nil
+  "Midi backend to use to play notes when entering music in quick insert mode: 'osx 'pcspkr or 'alsa"
   :group 'lyqi
   :type '(choice (const :tag "Linux/ALSA backend (lyqikbd)" alsa)
+                 (const :tag "PC Speaker" pcspkr)
                  (const :tag "Mac OS X backend (MidiScript)" osx)
                  (const :tag "None" nil)))
 
-(defcustom lyqi:lilypond-command "lilypond"
+(defcustom lyqi-lilypond-command "lilypond"
   "Command used to compile .ly files"
   :group 'lyqi
   :type 'string)
 
-(defcustom lyqi:pdf-command "xpdf"
+(defcustom lyqi-pdf-command "xpdf"
   "Command used to open .pdf files"
   :group 'lyqi
   :type 'string)
 
-(defcustom lyqi:midi-command "timidity"
+(defcustom lyqi-midi-command "timidity"
   "Command used to open .midi files"
   :group 'lyqi
   :type 'string)
-
-(provide 'lyqi-custom)
