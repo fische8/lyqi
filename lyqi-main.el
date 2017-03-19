@@ -1,8 +1,26 @@
+;; Copyright (c) 2009 Nicolas Sceaux, 2016 Héctor Lahoz
+;;
+;; lyqi-main.el - main mode setup, keymaps and modeline
+;;
+;; This file is part of lyqi.
+;;
+;; lyqi is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; lyqi is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with lyqi.  If not, see <http://www.gnu.org/licenses/>.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; Lyqi mode
-;;;
 
+;;;
+;;; lyqi-main.el
+;;;
 (eval-when-compile (require 'cl))
 (require 'eieio)
 (require 'lp-base)
@@ -11,7 +29,7 @@
 (require 'lyqi-midi)
 (require 'lyqi-editing-commands)
 (require 'lyqi-compile-commands)
-(require 'lyqi-completion)
+(require 'lyqi-completion "completion")
 (require 'lyqi-help)
 (require 'lyqi-vars)
 
@@ -83,16 +101,42 @@ Otherwise, return NIL."
 ;;;
 ;;; Mode maps
 ;;;
-(defvar lyqi-normal-mode-map nil
+(defvar lyqi-normal-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "\C-cq" 'lyqi-toggle-quick-edit-mode)
+    (define-key map "\C-c\C-t" 'lyqi-transpose-region)
+    (define-key map "\C-c\C-l" 'lyqi-compile-ly)
+    (define-key map "\C-c\C-s" 'lyqi-open-pdf)
+    (define-key map [(control c) return] 'lyqi-open-midi)
+;(define-key map "(" 'lyqi-insert-opening-delimiter)
+;(define-key map "{" 'lyqi-insert-opening-delimiter)
+    (define-key map "<" 'lyqi-insert-opening-delimiter)
+    (define-key map "\"" 'lyqi-insert-delimiter)
+;(define-key map ")" 'lyqi-insert-closing-delimiter)
+    (define-key map "}" 'lyqi-insert-closing-delimiter)
+    (define-key map ">" 'lyqi-insert-closing-delimiter)
+    (define-key map [tab] 'lyqi-indent-line)
+    (define-key map [(control tab)] 'lyqi-complete-word)
+    map)
   "Keymap used in `lyqi-mode', in normal editing.")
 
-(defvar lyqi-quick-insert-mode-map nil
+(defvar lyqi-quick-insert-mode-map
+  (let ((map (copy-keymap lyqi-normal-mode-map)))
+    (define-key map "\"" 'lyqi-enter-quick-insert-string)
+    (define-key map "\\" 'lyqi-enter-quick-insert-command)
+    map)
   "Keymap used in `lyqi-mode', in quick insertion editing.")
 
-(defvar lyqi-quick-insert-string-mode-map nil
+(defvar lyqi-quick-insert-string-mode-map
+  (let ((map (copy-keymap lyqi-normal-mode-map)))
+    (define-key map "\"" 'lyqi-quit-quick-insert-string)
+    map)
   "Keymap used in `lyqi-mode', when inserting a string in quick insertion editing.")
 
-(defvar lyqi-quick-insert-command-mode-map nil
+(defvar lyqi-quick-insert-command-mode-map
+  (let ((map (copy-keymap lyqi-normal-mode-map)))
+    (define-key map " " 'lyqi-quit-quick-insert-command)
+    map)
   "Keymap used in `lyqi-mode', when inserting a \\command in quick insertion editing.")
 
 (defun lyqi-toggle-quick-edit-mode (&optional syntax)
@@ -102,7 +146,7 @@ Otherwise, return NIL."
     (set-slot-value syntax 'quick-edit-mode quick-edit-mode)
     (if quick-edit-mode
         (use-local-map lyqi-quick-insert-mode-map)
-        (use-local-map lyqi-normal-mode-map)))
+      (use-local-map lyqi-normal-mode-map)))
   (force-mode-line-update))
 
 (defun lyqi-enter-quick-insert-string ()
@@ -159,7 +203,7 @@ Otherwise, return NIL."
     ;; Undo
     ("u" undo)))
 
-(defconst lyqi-+qwerty-mode-map+
+(defconst lyqi-+qwerty-lr-mode-map+
   '(;; Rest, skip, etc
     ("v" lyqi-insert-rest)
     ("b" lyqi-insert-spacer)
@@ -193,6 +237,40 @@ Otherwise, return NIL."
     ;; Undo
     ("u" undo)))
 
+;; same as lyqi-+querty-lr-mpde-map+ but replacing alteration and octave
+;; with more logic keys w/s for alteration and q/a for octave
+(defconst lyqi-+qwerty-ud-mode-map+
+  '(;; Rest, skip, etc
+    ("v" lyqi-insert-rest)
+    ("b" lyqi-insert-spacer)
+    ;; also available: lyqi-insert-spacer lyqi-insert-skip
+    ;; Pitches
+    ("e" lyqi-insert-note-c)
+    ("r" lyqi-insert-note-d)
+    ("t" lyqi-insert-note-e)
+    ("d" lyqi-insert-note-f)
+    ("f" lyqi-insert-note-g)
+    ("g" lyqi-insert-note-a)
+    ("c" lyqi-insert-note-b)
+    ;; Alterations
+    ("w" lyqi-change-alteration-up)
+    ("s" lyqi-change-alteration-down)
+    ;; also available: lyqi-change-alteration-neutral
+    ;; Octaves
+    ("q" lyqi-change-octave-up)
+    ("a" lyqi-change-octave-down)
+    ;; Durations
+    ("i" lyqi-change-duration-1)
+    ("o" lyqi-change-duration-2)
+    ("j" lyqi-change-duration-4)
+    ("k" lyqi-change-duration-8)
+    ("l" lyqi-change-duration-16)
+    (";" lyqi-change-duration-32)
+    ("p" lyqi-change-duration-dots)
+    ;; also available: lyqi-change-duration-64 lyqi-change-duration-128
+    ;; Undo
+    ("u" undo)))
+
 (defmacro lyqi-define-string-insert-command (string &optional with-space-around)
   (let ((fn-name (intern (format "insert-string-%s" string))))
     `(progn
@@ -205,51 +283,6 @@ Otherwise, return NIL."
               `(insert ,string)))
        (byte-compile ',fn-name)
        ',fn-name)))
-
-(defun lyqi-force-mode-map-definition ()
-  "Force the (re-)definition if `lyqi-quick-insert-mode-map', by
-copying `lyqi-normal-mode-map' and using bindings set in either
-`lyqi-+qwerty-mode-map+' or `lyqi-+azerty-mode-map+' (depending
-on the value of `lyqi-keyboard-mapping'), and bindings from
-`lyqi-custom-key-map'."
-  (interactive)
-  (setq lyqi-quick-insert-string-mode-map (copy-keymap lyqi-normal-mode-map))
-  (define-key lyqi-quick-insert-string-mode-map "\"" 'lyqi-quit-quick-insert-string)
-  (setq lyqi-quick-insert-command-mode-map (copy-keymap lyqi-normal-mode-map))
-  (define-key lyqi-quick-insert-command-mode-map " " 'lyqi-quit-quick-insert-command)
-  (setq lyqi-quick-insert-mode-map (copy-keymap lyqi-normal-mode-map))
-  (define-key lyqi-quick-insert-mode-map "\"" 'lyqi-enter-quick-insert-string)
-  (define-key lyqi-quick-insert-mode-map "\\" 'lyqi-enter-quick-insert-command)
-  (loop for (key command) in (case lyqi-keyboard-mapping
-                               ((azerty) lyqi-+azerty-mode-map+)
-                               (t lyqi-+qwerty-mode-map+))
-        do (define-key lyqi-quick-insert-mode-map key command))
-  (loop for (key command) in lyqi-custom-key-map
-        if (stringp command)
-        do (define-key lyqi-quick-insert-mode-map
-             key (eval `(lyqi-define-string-insert-command ,command))) ;; urgh
-        else if (and (listp command) (eql (car command) 'space-around))
-        do (define-key lyqi-quick-insert-mode-map
-             key (eval `(lyqi-define-string-insert-command ,(cdr command) t)))
-        else do (define-key lyqi-quick-insert-mode-map key command)))
-
-(eval-when (load)
-  (setq lyqi-normal-mode-map (make-sparse-keymap))
-  (define-key lyqi-normal-mode-map "\C-cq" 'lyqi-toggle-quick-edit-mode)
-  (define-key lyqi-normal-mode-map "\C-c\C-t" 'lyqi-transpose-region)
-  (define-key lyqi-normal-mode-map "\C-c\C-l" 'lyqi-compile-ly)
-  (define-key lyqi-normal-mode-map "\C-c\C-s" 'lyqi-open-pdf)
-  (define-key lyqi-normal-mode-map [(control c) return] 'lyqi-open-midi)
-  ;(define-key lyqi-normal-mode-map "(" 'lyqi-insert-opening-delimiter)
-  ;(define-key lyqi-normal-mode-map "{" 'lyqi-insert-opening-delimiter)
-  (define-key lyqi-normal-mode-map "<" 'lyqi-insert-opening-delimiter)
-  (define-key lyqi-normal-mode-map "\"" 'lyqi-insert-delimiter)
-  ;(define-key lyqi-normal-mode-map ")" 'lyqi-insert-closing-delimiter)
-  (define-key lyqi-normal-mode-map "}" 'lyqi-insert-closing-delimiter)
-  (define-key lyqi-normal-mode-map ">" 'lyqi-insert-closing-delimiter)
-  (define-key lyqi-normal-mode-map [tab] 'lyqi-indent-line)
-  (define-key lyqi-normal-mode-map [(control tab)] 'lyqi-complete-word)
-  (lyqi-force-mode-map-definition))
 
 ;;;
 ;;; Header line
@@ -398,6 +431,20 @@ In quick insertion mode:
   ;; midi backend
   (lyqi-start-midi-backend)
   ;; default mode-map
-  (use-local-map lyqi-normal-mode-map))
+  (use-local-map lyqi-normal-mode-map)
+  ;; read customized keymap and set quick-insert-mode-map accordingly
+  (loop for (key command) in (case lyqi-keyboard-mapping
+				   ((azerty) lyqi-+azerty-mode-map+)
+				   ((qwerty-lr) lyqi-+qwerty-lr-mode-map+)
+				   (t lyqi-+qwerty-ud-mode-map+))
+        do (define-key lyqi-quick-insert-mode-map key command))
+  (loop for (key command) in lyqi-custom-key-map
+        if (stringp command)
+        do (define-key lyqi-quick-insert-mode-map
+             key (eval `(lyqi-define-string-insert-command ,command))) ;; urgh
+        else if (and (listp command) (eql (car command) 'space-around))
+        do (define-key lyqi-quick-insert-mode-map
+             key (eval `(lyqi-define-string-insert-command ,(cdr command) t)))
+        else do (define-key lyqi-quick-insert-mode-map key command)))
 
-(provide 'lyqi-mode)
+(provide 'lyqi-main)

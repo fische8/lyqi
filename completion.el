@@ -22,7 +22,7 @@
 ;;; completion.el
 ;;;
 
-(require 'lyqi-words)
+(require 'lyqi-lilypond-words)
 (defvar lyqi-backslashed-words
   (sort (mapcar 'symbol-name (append lyqi-lilypond-keywords
                                      lyqi-lilypond-music-variables

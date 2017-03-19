@@ -42,7 +42,8 @@ guessed."
 insert mode map."
   :group 'lyqi
   :type '(choice (const :tag "AZERTY" azerty)
-                 (const :tag "QWERTY" qwerty)))
+                 (const :tag "QWERTY left-right" qwerty-lr)
+		 (const :tag "QWERTY up/down" qwerty-ud)))
 
 (defcustom lyqi-custom-key-map nil
   "Key/command alist, for customizing the quick insertion mode map.
