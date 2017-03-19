@@ -1,4 +1,4 @@
-;;; lyqi-mode.el --- Write lilypond files quickly
+;;; lyqi.el --- Write lilypond files quickly
 
 ;; Copyright (C) 2017 Nicolas Sceaux, Héctor Lahoz
 

@@ -1,6 +1,6 @@
 ;; Copyright 2009 Nicolas Sceaux, 2016 Héctor Lahoz
 ;;
-;; lp-base.el - incremental lexing and parsing
+;; lyqi-vars.el - configuration variables (aka. user options)
 ;;
 ;; This file is part of lyqi.
 ;;
@@ -19,7 +19,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;
-;;; customization.el - configuration variables (aka. user options)
+;;; lyqi-vars.el - configuration variables (aka. user options)
 ;;;
 
 (defgroup lyqi nil

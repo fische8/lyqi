@@ -15,24 +15,17 @@ note entry, using the computer keyboard.  There are two editing modes:
 It also features (rather basic) auto-completion of LilyPond built-in
 keywords and commands, shortcut from keyword to LilyPond manual,
 compilation and view commands.  LilyPond language and Scheme language
-are distinguished, so coloring takes care of both situations, and in
-theory indentation should also (even though it is currently, err,
-perfectible).
-
-/!\ \relative mode is not yet supported (because of audio feedback
-issues).  Generally speaking, I have only implemented features that I
-actually use.
-
+are distinguished, so coloring takes care of both situations.
 
 Installation
 ============
-
 First, check that pre-requisites are installed and available in emacs
-load-path:
+load-path. If your Emacs version is older than 23, you'll have to install
+eieio manually:
 - eieio <http://cedet.sourceforge.net/eieio.shtml>
 
 After having downloaded and unpacked the archive, run:
-  $ make lyqi.elc
+  $ make
 
 This will:
 - download the LilyPond index page from the website and generate the
@@ -42,6 +35,9 @@ This will:
 - bytecompile it, using emacs found in PATH.  To use another one type
   instead e.g.:
   $ make lyqi.elc EMACS="/Applications/Aquamacs\ Emacs.app/Contents/MacOS/Aquamacs\ Emacs"
+
+Then run:
+  $ make install-source
 
 Finally, change your .emacs to make use of lyqi:
 
@@ -66,7 +62,12 @@ To build them, type:
 Customization
 =============
 
-(TODO: list options)
+In Emacs customize this variables:
+
+- lyqi-prefered-languages
+- lyqi-keyboard-mapping
+- lyqi-custom-key-map
+- lyqi-midi-backend
 
 In my .emacs:
 

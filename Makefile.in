@@ -29,15 +29,14 @@ distdir = $(PACKAGE)-$(VERSION)
 
 # the order here is the order in lyqi.el. Symbols should be defined
 # when they are used
-IN_SOURCES = package_header.el.in \
-             lp-base.el						\
+IN_SOURCES = lp-base.el lyqi-lilypond-words.el			\
              lyqi-vars.el lyqi-syntax.el completion.el		\
              hyphenate.el.in					\
              lyqi-compile-commands.el				\
              lyqi-editing-commands.el				\
              lyqi-indent.el					\
              lyqi-help-index.el lyqi-help.el lyqi-midi.el	\
-             lyqi-mode.el lyqi-pitchnames.el
+             lyqi-main.el lyqi-pitchnames.el
 
 EL_SOURCES = $(subst .in,,$(IN_SOURCES))
 
@@ -58,27 +57,14 @@ distfiles := ${IN_SOURCES} \
 	docs/texinfo \
 	docs/html/lyqi_manual.html \
 	docs/texinfo/lyqi-manual.texi \
-	docs/texinfo/Makefile \
-	debian \
-	debian/changelog \
-	debian/compat \
-	debian/control \
-	debian/copyright \
-	debian/files \
-	debian/lyqi-mode.dirs \
-	debian/lyqi-mode.doc-base \
-	debian/lyqi-mode.emacsen-install \
-	debian/lyqi-mode.emacsen-remove \
-	debian/lyqi-mode.emacsen-startup \
-	debian/lyqi-mode.substvars \
-	debian/lyqi-mode.postrm \
-	debian/rules \
-	debian/source \
-	debian/source/format
+	docs/texinfo/Makefile
 
 LILYPOND_ORG_DOC_URL = http://lilypond.org/doc/v2.13/Documentation/notation
 
-all: lyqi.elc lilypond-words.el
+%.el: %.el.in
+	./config.status $@
+
+all: lyqi.elc lyqi-lilypond-words.el
 
 lyqi.elc: lyqi.el
 	$(EMACS) -batch -u $$USER -l set-compilation-path.el -f batch-byte-compile lyqi.el
@@ -89,16 +75,16 @@ lilypond-index.html:
 lyqi-help-index.el: lilypond-index.html
 	perl make-help-index.pl lilypond-index.html $(LILYPOND_ORG_DOC_URL) $@
 
-lilypond-words.el: | lyqi-words_$(lilypond_version).el
-	ln -f lyqi-words_$(lilypond_version).el lilypond-words.el
+lyqi-lilypond-words.el: | lyqi-words_$(lilypond_version).el
+	ln -f lyqi-words_$(lilypond_version).el $@
 
 lyqi-words_$(lilypond_version).el: make-words.ly
 	$(lilypond) make-words
 	mv lyqi-words.el lyqi-words_$(lilypond_version).el
 
-# we make lyqi.el concatenating all the source files
-lyqi.el: $(EL_SOURCES)
-	echo -n > $@
+# we make lyqi-mode.el concatenating all the source files
+lyqi.el: package_header.el $(EL_SOURCES)
+	cp package_header.el $@
 # Concatenate each source file removing the header (GPL license) until the
 # first line not matching "^;;"
 	for file in $(EL_SOURCES); do \
@@ -106,16 +92,15 @@ lyqi.el: $(EL_SOURCES)
 	done
 	sed -i -e 's/(provide .lyqi-[^)]*)//' -e 's/(require .lyqi-[^)]*)//' \
 	-e 's/(provide .lp-[^)]*)//' -e 's/(require .lp-[^)]*)//' $@
-	echo "(provide 'lyqi)" >> $@
+	printf "(provide 'lyqi)\n;;; lyqi.el ends here" >> $@
 
 osx: lyqi.elc
 	cd EmacsPointAndClick && make all
 	cd MidiScript && make all
 
-install-source: lyqi.el lilypond-words.el
-	$(INSTALL) -m644 -o root -g root -d $(DESTDIR)/usr/share/emacs/site-lisp/lyqi-mode
-	$(INSTALL) -m644 -o root -g root -D lyqi.el $(DESTDIR)/usr/share/emacs/site-lisp/lyqi-mode/lyqi-mode.el
-	$(INSTALL) -m644 -o root -g root lilypond-words.el $(DESTDIR)/usr/share/emacs/site-lisp/lyqi-mode
+install-source: lyqi.el lyqi-lilypond-words.el
+	$(INSTALL) -m755 -o root -g root -d $(DESTDIR)/usr/share/emacs/site-lisp/lyqi-mode
+	$(INSTALL) -m644 -o root -g root lyqi.el $(DESTDIR)/usr/share/emacs/site-lisp/lyqi-mode
 
 $(distdir): $(distfiles)
 	if test -d $(distdir); then rm -rf $(distdir); fi
@@ -137,7 +122,7 @@ clean:
 
 distclean: clean
 	rm -f *~
-	rm -f lilypond-words.el lyqi-words*.el
+	rm -f lyqi-lilypond-words.el lyqi-words*.el
 	rm -rf config.status config.log  autom4te.cache $(config_generated_files)
 
 .PHONY: osx linux dist clean distclean install-source install-bytecode

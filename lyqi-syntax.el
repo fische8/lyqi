@@ -27,7 +27,7 @@
 (require 'lp-base)
 (require 'lyqi-pitchnames)
 (require 'lyqi-vars)
-(eval-and-compile (load "lilypond-words"))
+(eval-when-compile (require 'lyqi-lilypond-words))
 
 ;;;
 ;;; Lexer states
