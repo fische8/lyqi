@@ -1,7 +1,8 @@
 ;; hyphenate.el - hyphenate words for automatic lyrics hyphenation
 ;; Copyright 2016 Héctor Lahoz
 ;;
-;; this program is based on the work of Franklin M. Liang
+;; This file is part of lyqi.
+;; It is based on the work of Franklin M. Liang
 ;;
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
