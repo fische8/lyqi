@@ -120,15 +120,14 @@
     (lyqi-player-terminate lyqi-midi-player-object)
     (setq lyqi-midi-player-object nil)))
 
-(defun lyqi-play-note (note &optional ref-note)
+(defun lyqi-play-note (note)
   (when lyqi-midi-player-object
-    (let ((midi-note (if ref-note
-			 (lyqi-midi-relative-pitch note ref-note)
-		       (with-slots (pitch alteration octave-modifier) note
-				   (+ (aref [0 2 4 5 7 9 11] pitch)
-				      (/ alteration 2)
-				      (* octave-modifier 12)
-				      48)))))
+    (let ((midi-note
+	   (with-slots (pitch alteration octave-modifier) note
+		       (+ (aref [0 2 4 5 7 9 11] pitch)
+			  (/ alteration 2)
+			  (* octave-modifier 12)
+			  48))))
       (play-note lyqi-midi-player-object midi-note))))
 
 (provide 'lyqi-midi)

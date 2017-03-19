@@ -37,7 +37,10 @@ This will:
   $ make lyqi.elc EMACS="/Applications/Aquamacs\ Emacs.app/Contents/MacOS/Aquamacs\ Emacs"
 
 Then run:
-  $ make install-source
+  # make install-source
+
+Note that you must be root to do that since it writes in some Emacs system
+directories.
 
 Finally, change your .emacs to make use of lyqi:
 

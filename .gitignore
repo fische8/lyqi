@@ -6,6 +6,7 @@
 compile-script
 lilypond-index.html
 lyqi-help-index.el
+lyqi-lilypond-words.el
 hyphenate.el
 package_header.el
 lyqi.el

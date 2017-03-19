@@ -373,13 +373,10 @@ Otherwise, return NIL."
                                                       keymap (mouse-1 . lyqi-mode-line-lyqi-mode))))))
           ")%]  ")))
 
-;;;
-;;; lyqi-mode
-;;;
-
 (defvar lyqi-mode-syntax-table nil
   "Syntax table used in `lyqi-mode' buffers.")
 
+;;;###autoload
 (defun lyqi-mode ()
   "Major mode for editing LilyPond music files, with quick insertion.
 
