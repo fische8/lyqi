@@ -398,6 +398,11 @@ In quick insertion mode:
   (modify-syntax-entry ?\* "w" lyqi-mode-syntax-table)
   (modify-syntax-entry ?\/ "w" lyqi-mode-syntax-table)
   (set-syntax-table lyqi-mode-syntax-table)
+  ;; insert template when visiting new file
+  (when (= (buffer-size) 0)
+    (make-local-variable 'tempo-interactive)
+    (setq tempo-interactive t)
+    (tempo-template-SATB-skeleton))
   ;; indentation
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'lyqi-indent-line)

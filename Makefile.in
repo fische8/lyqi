@@ -32,6 +32,7 @@ distdir = $(PACKAGE)-$(VERSION)
 IN_SOURCES = lp-base.el lyqi-lilypond-words.el			\
              lyqi-vars.el lyqi-syntax.el completion.el		\
              hyphenate.el.in					\
+             lyqi-templates.el					\
              lyqi-compile-commands.el				\
              lyqi-editing-commands.el				\
              lyqi-indent.el					\
