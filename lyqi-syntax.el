@@ -86,7 +86,7 @@
 
 (defmethod initialize-instance :AFTER ((this lyqi-lilypond-syntax) &optional fields)
   (set-slot-value this 'possible-languages
-                  (copy-list lyqi-prefered-languages))
+                  (copy-list lyqi-preferred-languages))
   (set-slot-value this 'default-parser-state
                   (make-instance 'lyqi--toplevel-parser-state)))
 

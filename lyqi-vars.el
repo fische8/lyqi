@@ -27,7 +27,7 @@
   :prefix "lyqi-"
   :group 'applications)
 
-(defcustom lyqi-prefered-languages '(nederlands italiano)
+(defcustom lyqi-preferred-languages '(nederlands italiano)
   "Prefered languages for note names.  The first choice is used
 in new files, or when the language of an existing file cannot be
 guessed."
