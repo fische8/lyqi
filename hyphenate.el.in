@@ -105,7 +105,7 @@ won't be hyphenated")
 	    (add-pattern pattern-trie pat)))
       (message (concat "Patterns loaded from \"" file "\"")))))
 
-(defun set-hyphen-language (lang)
+(defun set-lyrics-language (lang)
   "Set the language for the lyrics in the current buffer"
   (interactive "sLanguage (iso 639-1 code): ")
   (let ((file (dictionary-file lang)))
@@ -252,7 +252,7 @@ and requested node doesn't exist"
 	(when (= (% (aref hyphen-weights i) 2) 1)
 	  (push i ret))))))
 
-(defun ly:hyphenate-word (word)
+(defun ly-hyphenate-word (word)
   (let* ((word-d (downcase word))
 	 (hyf (find-hyphens word-d))
 	 (start 0)
@@ -264,7 +264,7 @@ and requested node doesn't exist"
     (push (substring word start) ret)	;final piece
     (apply 'concat (reverse ret))))
 
-(defun lyqi:hyphenate-region (beg end)
+(defun lyqi-hyphenate-region (beg end)
   "Add lilypond centered hyphens to every word in the region"
   (interactive "r")
   (save-excursion
