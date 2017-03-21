@@ -3,7 +3,7 @@
 @settitle lyqi manual
 
 @copying
-Copyright 2016 Héctor Lahoz
+Copyright 2016 Nicolas Sceaux, Héctor Lahoz
 @end copying
 
 @contents
@@ -119,45 +119,6 @@ lyqi can take some text and separate it in syllables automatically.
 This can be used to align lyrics with notes easily. @xref{alh,,lyrics hyphenation}.
 @end table
 
-@section News
-@findex lyqi:transpose-interval-region
-@itemize
-@item 2004-03-14
-Version 0.2.5: various suggestions and patches by Reuben
-Thomas, including an alternate transposition command
-@code{lyqi-transpose-interval-region}.
-Rumor related custom variables are now named
-@code{lyqi:rumor-default-...}. Now uses rumor 1.0.3.
-
-@item 2004-01-04
-Version 0.2.4: lyqi can now use an already running timidity
-demon (custom variables are
-@code{lyqi:midi-use-external-timidity-server} and
-@code{lyqi:midi-external-timidity-port}, which can be set with the
-@findex lyqi:midi-set-timidity-alsa-port
-command). Compatibility with elder EIEIO versions, thanks to
-Ferenc Wagner. Bug fix: Lyqi remembers the previously chosen
-language when back to lyqi-mode.
-  
-@item 2003-09-27
-Version 0.2.3: supports rumor 1.0.2a. New commands to change
-rumor parameters (the prefix key for rumor commands is @code{C-cr}).
-@kbd{C-c r s} to start, @code{SPC} to
-stop, see reference for custom.
-  
-@item 2003-09-13
-Version 0.2.2: supports rumor
-(start: @kbd{C-c r}, stop: SPC).
-`n' sets the last note alteration to natural, `=' resets the note
-octave.
-
-@item 2003-08-01
-Version 0.2.1: now, works also in XEmacs.
-
-@item 2003-07-28
-Version 0.2 released.
-@end itemize
-
 @node Installing lyqi, Using lyqi, Overview, Top
 @chapter Installation
 We strongly recommend you to use a prepackaged version
@@ -212,6 +173,7 @@ redefined by the user (this is Emacs!).
 * Note entry::
 * Note playback::      How to set up note playback to hear as you type
 * Lyrics hyphenation:: Automatic lyrics hyphenation
+* Working with regions:: Commands that modify regions of notes
 * Templates::
 @end menu
 
@@ -244,6 +206,7 @@ redefined by the user (this is Emacs!).
 Notes are inserted by specifying their pitch. Use your computer
 keyboard as a mini piano keyboard. Rests are inserted with the v key,
 and spacers with the b key.
+@ifinfo
 @float Figure,
  |  | | | |  |  | | | | | |  |@*
  |  | | | |  |  | | | | | |  |@*
@@ -252,7 +215,6 @@ and spacers with the b key.
  | e | r | t | d | f | g | c |@*
  |___|___|___|___|___|___|___|@*
 @end float
-
 @example
 @group
 q w @strong{e r t} y u i o p
@@ -260,6 +222,30 @@ q w @strong{e r t} y u i o p
   z x @strong{c v b} n m , . -
 @end group
 @end example
+@end ifinfo
+
+@iftex
+@tex
+\vskip 12pt
+\vbox to 4cm{\tt\obeylines\obeyspaces\baselineskip=4pt\lineskip=0pt\lineskiplimit=0pt
+\catcode`_=12\catcode`|=12
+ |  | | | |  |  | | | | | |  |
+ |  | | | |  |  | | | | | |  |
+ |  | | | |  |  | | | | | |  |
+ |  |_| |_|  |  |_| |_| |_|  |
+ |   |   |   |   |   |   |   |
+ | e | r | t | d | f | g | c |
+ |___|___|___|___|___|___|___|
+\vfil
+| q w @strong{e r t} y u i o p   |
+|  a s @strong{d f g} h j k l ;  |
+|   z x @strong{c v b} n m , . - |
+}
+@end tex
+@end iftex
+
+@kindex w
+@kindex s
 To alterate a note, type the w and s keys to flatten or sharpen the note. Note that they are chosen not to be reminders (then s would stand for "sharp") but the upper key gets note pitch up and lower gets it down.
 @table @kbd
 @item w
@@ -276,7 +262,12 @@ q @strong{w} e r t y u i o p
 @end group
 @end example
 
-When inserting notes, octave is chosen so that the inserted note is the closer in pitch from the preceding (up to a fourth). You change a note octave with comma and quote keys.
+@kindex q
+@kindex a
+When inserting notes, octave is chosen so that the inserted note is
+the closer in pitch from the preceding (up to a fourth). You change a
+note octave with comma and quote keys.
+
 @table @kbd
 @item q
 octave up
@@ -293,11 +284,20 @@ octave down
 @end example
 
 By default the notes are inserted in Dutch. If you want to  use other language
-customize the variable @code{lyqi:preferred-languages}.
+customize the variable
+@vindex lyqi-preferred-languages
+@code{lyqi-preferred-languages}.
 
 @subsection Duration
 The first inserted note is a quater note. You change the duration with the number keys, and add/remove dots with the dot key. When you change a note duration, the next inserted note will have the same duration.
 
+@kindex h
+@kindex j
+@kindex k
+@kindex l
+@kindex i
+@kindex o
+@kindex p
 @multitable {duration}{111}{111}{111}{111}{111}{111}
 @item
 key@tab i@tab o@tab j@tab k @tab l@tab ;
@@ -305,11 +305,13 @@ key@tab i@tab o@tab j@tab k @tab l@tab ;
 duration@tab 1@tab 2@tab 4@tab 8 @tab 16@tab 32
 @end multitable
 
-@float Figure
-@ @ q w e r t y u i o p@*
-@ @ @ a s d f g h j k l ;@*
-@ @ @ @ z x c v b n m , . -@*
-@end float
+@example
+@group
+q w e r t y u @strong{i o p}
+ a s d f g @strong{h j k l ;}
+  z x c v b n m , . -
+@end group
+@end example
 
 For instance, to produce the following output:
 
@@ -362,16 +364,30 @@ pitch and length to the keyboard process' standard input. Then a note
 is (hopefully) heard.
 @end itemize
 
-@node Lyrics hyphenation, Templates, Note playback, Using lyqi
+@node Lyrics hyphenation, Working with regions, Note playback, Using lyqi
 @section Hyphenate lyrics automatically
 @kindex C-c C-h
-@findex hyphenate-region
 @anchor{alh}
-To hyphenate lyrics just type the text without hyphens, select it and then
-execute the command @code{ly-hyphenate-region}. By default its key binging
+To hyphenate lyrics just type the text without hyphens.
+Then you must tell lyqi what language the lyrics are written in by
+executing the command
+@findex set-lyrics-language
+@command{set-lyrics-language}. This command loads the hyphenation patterns
+needed to do the actual work.
+
+Set the region and then execute the command
+@findex ly-hyphenate-region
+@code{ly-hyphenate-region}. By default its key binding
 is @kbd{C-c C-h}.
 
-@node Templates,, Lyrics hyphenation, Using lyqi
+@node Working with regions, Templates, Lyrics hyphenation, Using lyqi
+@section Working with regions
+You can transpose a whole region of notes using the command
+@findex lyqi-transpose-region
+@command{lyqi-transpose-region}. Set the region and execute it.
+You will be asked for an interval to transpose.
+
+@node Templates,, Working with regions, Using lyqi
 @section visiting new files
 @cindex Templates
 @findex tempo-template-SATB-skeleton
@@ -389,9 +405,14 @@ The available templates are:
 @end itemize
 
 @node Indices,, Using lyqi, Top
+@unnumbered Indices
+@subsection Command index
 @printindex fn
 
+@subsection Variable index
+@printindex vr
+
+@subsection Key bindings index
 @printindex ky
 
-@printindex vr
 @bye
