@@ -1,4 +1,4 @@
-AC_INIT([lyqi-mode], [0.3])
+AC_INIT([lyqi-mode], [0.3.0])
 AC_PATH_PROG([locate], [locate])
 
 # we use awk in the Makefile
@@ -12,5 +12,6 @@ AC_MSG_RESULT([$hyphenation_patterns_dir])
 AC_PATH_PROG([LILYPOND],[lilypond])
 LYQI_CHECK_LILYPOND
 
-AC_CONFIG_FILES(hyphenate.el package_header.el Makefile)
+AC_CONFIG_FILES(hyphenate.el package_header.el lyqi-main.el
+                Makefile)
 AC_OUTPUT

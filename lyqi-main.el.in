@@ -21,6 +21,15 @@
 ;;;
 ;;; lyqi-main.el
 ;;;
+
+(defvar lyqi-version "@PACKAGE_VERSION@"
+  "Current version of lyqi.")
+
+(defun lyqi-version ()
+  "Display the current version of lyqi."
+  (interactive)
+  (message lyqi-version))
+
 (eval-when-compile (require 'cl))
 (require 'eieio)
 (require 'lp-base)

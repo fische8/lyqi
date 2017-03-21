@@ -9,6 +9,7 @@ lyqi-help-index.el
 lyqi-lilypond-words.el
 hyphenate.el
 package_header.el
+lyqi-main.el
 lyqi.el
 config.status
 Makefile
