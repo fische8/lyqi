@@ -78,7 +78,7 @@
 ;;;
 ;;; LilyPond syntax (language dependent)
 ;;;
-(defclass lyqi-lilypond-syntax (lp:syntax)
+(defclass lyqi-lilypond-syntax (lp-syntax)
   ((language              :initarg :language
                           :accessor lyqi-language)
    (possible-languages)
@@ -229,7 +229,7 @@ Oterwise, return NIL."
   '(face font-lock-constant-face))
 
 (defmethod lp:fontify ((this lyqi-music-form))
-  (let* ((start (marker-position (lp:marker this)))
+  (let* ((start (marker-position (lp--marker this)))
          (end (+ start (lp:size this))))
     (when (> end start)
       (lp:fontify-region start end (lp:face this)))))
@@ -244,7 +244,7 @@ Oterwise, return NIL."
     `(let* ((,marker-symbol (point-marker))
             (,size-symbol (progn
                             ,@(if regex `((looking-at ,regex)))
-                            (lp:forward-match)
+                            (lyqi--forward-match)
                             (- (point) ,marker-symbol))))
        ,@body)))
 (put 'lyqi-with-forward-match 'lisp-indent-function 1)
@@ -262,7 +262,7 @@ Oterwise, return NIL."
         forms)))
 
 (defmethod lp:lex ((parser-state lyqi-base-parser-state) syntax)
-  (lyqi-skip-whitespace)
+  (lyqi--skip-whitespace)
   (cond ((eolp)
          ;; at end of line, reduce remaining lexemes
          (values parser-state (lyqi-reduce-lexemes parser-state) nil))
@@ -356,7 +356,7 @@ Oterwise, return NIL."
                  t))))
 
 (defmethod lp:lex ((parser-state lyqi--toplevel-parser-state) syntax)
-  (lyqi-skip-whitespace)
+  (lyqi--skip-whitespace)
   (cond ((eolp)
          ;; at end of line, reduce remaining lexemes
          (values parser-state (lyqi-reduce-lexemes parser-state) nil))
@@ -368,7 +368,7 @@ Oterwise, return NIL."
          (values (lyqi-make-parser-state 'lyqi-note-duration?-parser-state
                                          parser-state
                                          :form-class 'lyqi-simple-note-form
-                                         :lexemes (list (lyqi-lex-note syntax)))
+                                         :lexemes (list (lyqi--lex-note syntax)))
                  (lyqi-reduce-lexemes parser-state)
                  t))
         ;; rest, mm-rest, skip or spacer
@@ -414,7 +414,7 @@ Oterwise, return NIL."
 
 (defmethod lp:lex ((parser-state lyqi-duration?-parser-state) syntax)
   (let ((duration (lyqi-lex-duration syntax)))
-    (lyqi-skip-whitespace)
+    (lyqi--skip-whitespace)
     (lp:push-lexeme parser-state duration)
     (let ((music-form (lp:reduce-lexemes parser-state)))
       (set-slot-value music-form 'duration duration)
@@ -429,10 +429,10 @@ Oterwise, return NIL."
           t))
 
 (defmethod lp:lex ((parser-state lyqi-note-rest?-parser-state) syntax)
-  (lyqi-skip-whitespace)
+  (lyqi--skip-whitespace)
   (let* ((marker (point-marker))
          (rest-lexeme (when (looking-at "\\\\rest")
-                        (lp:forward-match)
+                        (lyqi--forward-match)
                         (make-instance 'lyqi-note-rest-lexeme
                                        :marker marker
                                        :size (- (point) marker))))
@@ -442,7 +442,7 @@ Oterwise, return NIL."
     (let ((note-form (lp:reduce-lexemes parser-state)))
       (set-slot-value note-form 'rest (not (not rest-lexeme)))
       (set-slot-value note-form 'duration duration-lexeme)
-      (lyqi-skip-whitespace)
+      (lyqi--skip-whitespace)
       (values (lp:next-parser-state parser-state)
               (list note-form)
               (not (eolp))))))
@@ -466,7 +466,7 @@ Oterwise, return NIL."
             (not (eolp)))))
 
 (defmethod lp:lex ((parser-state lyqi-chord-parser-state) syntax)
-  (lyqi-skip-whitespace)
+  (lyqi--skip-whitespace)
   (cond ((eolp)
          ;; this form is on several lines.
          ;; return all lexemes
@@ -475,7 +475,7 @@ Oterwise, return NIL."
                  nil))
         ;; a note
         ((looking-at (slot-value (lyqi-language syntax) 'note-regex))
-         (lp:push-lexeme parser-state (lyqi-lex-note syntax))
+         (lp:push-lexeme parser-state (lyqi--lex-note syntax))
          (values parser-state
                  nil
                  t))
@@ -499,7 +499,7 @@ Oterwise, return NIL."
 ;;;
 
 (defmethod lp:lex ((parser-state lyqi-scheme-list-parser-state) syntax)
-  (lyqi-skip-whitespace)
+  (lyqi--skip-whitespace)
   (cond ((eolp)
          (values parser-state
                  nil
@@ -591,7 +591,7 @@ Oterwise, return NIL."
                        (not (eolp))))))))
 
 (defmethod lp:lex ((parser-state lyqi-embedded-toplevel-parser-state) syntax)
-  (lyqi-skip-whitespace)
+  (lyqi--skip-whitespace)
   (if (looking-at "#}")
       (lyqi-with-forward-match (marker size)
         (values (lp:next-parser-state parser-state)
@@ -604,11 +604,6 @@ Oterwise, return NIL."
 ;;;
 ;;; specific lexing functions
 ;;;
-
-(defun lyqi-skip-whitespace ()
-  "Skip white space (except new lines)."
-  (when (looking-at "[ 	]+")
-    (lp:forward-match)))
 
 (defun lyqi-lex-verbatim (syntax &optional verbatim-regex)
   (lyqi-with-forward-match ((or verbatim-regex ".[^ \t\r\n\"%<>{}\\]*") marker size)
@@ -631,7 +626,7 @@ Return two values:
         (size 0))
     (when with-start
       (looking-at "[^\"]*\"")
-      (lp:forward-match)
+      (lyqi--forward-match)
       (incf size (- (match-end 0) (match-beginning 0))))
     (loop for char = (char-after)
           for next-char = (char-after (1+ (point)))
@@ -684,7 +679,7 @@ Return two values:
           ;; continue scan
           else do (forward-char 1) and do (incf size))))
 
-(defun lyqi-lex-note (syntax)
+(defun lyqi--lex-note (syntax)
   (let ((pitch 0)
         (alteration 0)
         (octave-modifier 0)
@@ -696,12 +691,12 @@ Return two values:
                                (slot-value (lyqi-language syntax) 'name->pitch))))
         (setf pitch (second pitch-data))
         (setf alteration (third pitch-data)))
-      (lp:forward-match)
+      (lyqi--forward-match)
       ;; octave
       (when (looking-at (slot-value (lyqi-language syntax) 'octave-regex))
-        (setf octave-modifier (* (if (eql (char-after) ?\,) -1 1)
-                                 (- (match-end 0) (match-beginning 0))))
-        (lp:forward-match))
+        (setf octave-modifier
+	      (ly-string-to-octave (match-string 0)))
+	(lyqi--forward-match))
       ;; accidental
       (cond ((eql (char-after) ?\!)
              (forward-char 1)
@@ -733,9 +728,9 @@ Return two values:
                           (forward-char 1)
                           'lyqi-chord-repetition-lexeme)
                          ((looking-at "\\\\skip")
-                          (lp:forward-match)
+                          (lyqi--forward-match)
                           (setf size (- (point) marker))
-                          (lyqi-skip-whitespace)
+                          (lyqi--skip-whitespace)
                           'lyqi-skip-lexeme))
                    :marker marker :size size)))
 
@@ -756,22 +751,22 @@ Return two values:
           ;; length
           (setf length (cdr (assoc (match-string-no-properties 0)
                                    (slot-value (lyqi-language syntax) 'duration-data))))
-          (lp:forward-match)
+          (lyqi--forward-match)
           ;; dots
           (when (and (not (eolp))
                      (looking-at "\\.+"))
             (setf dot-count (- (match-end 0) (match-beginning 0)))
-            (lp:forward-match))
+            (lyqi--forward-match))
           ;; numerator
           (when (and (not (eolp))
                      (looking-at "\\*\\([0-9]+\\)"))
             (setf num (string-to-number (match-string-no-properties 1)))
-            (lp:forward-match)
+            (lyqi--forward-match)
             ;; denominator
             (when (and (not (eolp))
                        (looking-at "/\\([0-9]+\\)"))
               (setf den (string-to-number (match-string-no-properties 1)))
-              (lp:forward-match))))
+              (lyqi--forward-match))))
         (make-instance 'lyqi-duration-lexeme
                        :length length
                        :dot-count dot-count

@@ -54,7 +54,7 @@
   (multiple-value-bind (start abbrev)
       (let ((string (lp:string this)))
         (string-match ".*\\\\\\(.*\\)" string)
-        (values (+ (match-beginning 1) (lp:marker this))
+        (values (+ (match-beginning 1) (lp--marker this))
                 (match-string 1 string)))
     (make-instance 'lyqi-abbrev
                    :abbrev abbrev
@@ -65,7 +65,7 @@
   (make-instance 'lyqi-abbrev
                  :abbrev (lp:string this)
                  :collection lyqi-scheme-words
-                 :start-position (lp:marker this)))
+                 :start-position (lp--marker this)))
 
 (defmethod lyqi-complete-abbrev ((this lyqi-abbrev))
   (let* ((abbrev (slot-value this 'abbrev))
@@ -89,8 +89,8 @@
 (defun lyqi-complete-word ()
   (interactive)
   (multiple-value-bind (form line rest-forms)
-      (lp:form-before-point (lp:current-syntax) (point))
-    (when (and form (= (point) (+ (lp:marker form) (lp:size form))))
+      (lp:form-before-point lp--current-syntax (point))
+    (when (and form (= (point) (+ (lp--marker form) (lp:size form))))
       (let ((abbrev (lyqi-form-abbrev form)))
         (when abbrev
           (lyqi-complete-abbrev abbrev))))))

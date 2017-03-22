@@ -31,7 +31,7 @@
   "Return the number of columns from the beginning of the line
 where `token' is placed, to `token'"
   (save-excursion
-    (goto-char (lp:marker token))
+    (goto-char (lp--marker token))
     (- (point) (point-at-bol))))
 
 (defun lyqi-indent-line ()
@@ -41,7 +41,7 @@ where `token' is placed, to `token'"
     (let (final-position)
       (save-excursion
         (forward-line 0)
-        (let* ((syntax (lp:current-syntax))
+        (let* ((syntax lp--current-syntax)
                (line (first (lp:find-lines syntax (point-marker)))))
           (indent-line-to
            (max 0
