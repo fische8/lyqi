@@ -405,6 +405,18 @@ In quick insertion mode:
     (make-local-variable 'tempo-interactive)
     (setq tempo-interactive t)
     (tempo-template-SATB-skeleton))
+  ;; comment syntax variables
+  (make-local-variable 'comment-start)
+  (setq comment-start "%")
+  (make-local-variable 'comment-start-skip)
+  (setq comment-start-skip "%{? *")
+  (make-local-variable 'comment-end)
+  (setq comment-end "")
+  (make-local-variable 'block-comment-start)
+  (setq block-comment-start "%{")
+  (make-local-variable 'block-comment-end)  
+  (setq block-comment-end   "%}")
+  (setq comment-region-function 'lyqi-comment-region)
   ;; indentation
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'lyqi-indent-line)
