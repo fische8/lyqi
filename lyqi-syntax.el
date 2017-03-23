@@ -30,6 +30,39 @@
 (eval-when-compile (require 'lyqi-lilypond-words))
 
 ;;;
+;;; Comments
+;;;
+
+(defconst lyqi-comment-styles '(block block-multi multi)
+  "Styles for lilypond comments")
+
+(defcustom lyqi-comment-style 'block
+  "Style to be used for `comment-region'.
+See `lyqi-comment-styles' for a list of available styles."
+  :type (if (boundp 'lyqi-comment-styles)
+	    `(choice ,@(mapcar (lambda (s) `(const ,s))
+			       lyqi-comment-styles))
+	  'symbol)
+  :group 'lyqi)
+
+(eval-when-compile (require 'newcomment))
+;; TODO anidated comments do not work
+;; "%}" must be scaped
+(defun lyqi-comment-region (beg end arg)
+  (setq arg (or arg 1))
+  (if (eq lyqi-comment-style 'block)
+      (progn (goto-char end)
+	     (insert block-comment-end ?\n)
+	     (goto-char beg)
+	     (insert block-comment-start ?\n))
+    (goto-char end)
+    (while (< beg (point))
+      (skip-chars-backward " \t\n")
+      (beginning-of-line)
+      (insert (make-string arg (elt comment-start 0)) ?\s)
+      (beginning-of-line))))
+
+;;;
 ;;; low level functions
 ;;;
 (defmacro ly-octave-to-string (octave)

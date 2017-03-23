@@ -24,15 +24,15 @@ thanks to previous notes; length, octave and alteration can be
 modified wherever and whenever by single key strokes.
 
 @menu
-* Overview::        Overview
+* Introduction::
 * Installing lyqi:: How to install
 * Using lyqi::      How to use lyqi
 * Indices::         Function and key indices
 @end menu
 @end ifnottex
 
-@node Overview, Installing lyqi, Top, Top
-@chapter Overview
+@node Introduction, Installing lyqi, Top, Top
+@chapter Introduction
 @section About lyqi
 lyqi-mode (LilyPond quick insert mode) is an Emacs major mode,
 derived from LilyPond-mode, and inspired by its
@@ -119,7 +119,7 @@ lyqi can take some text and separate it in syllables automatically.
 This can be used to align lyrics with notes easily. @xref{alh,,lyrics hyphenation}.
 @end table
 
-@node Installing lyqi, Using lyqi, Overview, Top
+@node Installing lyqi, Using lyqi, Introduction, Top
 @chapter Installation
 We strongly recommend you to use a prepackaged version
 if it is available for your operating system.
@@ -157,10 +157,10 @@ package hyph-utf8 that you can find @uref{https://www.ctan.org/tex-archive/langu
 @chapter Using lyqi
 @findex lyqi-mode
 @kindex C-c q
-In order to start lyqi-mode, visit a .ly file in Emacs. LilyPond-mode
-should be then started. Type @kbd{C-c q} or M-x lyqi-mode to switch to
-lyqi-mode. Note that C-c q let you switch back to regular
-LilyPond-mode.
+Since lyqi is a major mode you can use the standard Emacs methods
+to enter it. You can configure Emacs to choose lyqi mode whenever you
+visit a file with a ``.ly'' extension.
+@xref{Choosing Modes,,,emacs-23/emacs, GNU Emacs Manual}, for details.
 
 In the following, I use italiano as a language for notes, (a) because
 la-si-do notes are my mother tongue in music, and (b) in order to
