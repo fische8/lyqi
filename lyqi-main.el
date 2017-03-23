@@ -22,9 +22,6 @@
 ;;; lyqi-main.el
 ;;;
 
-(defvar lyqi-version "@PACKAGE_VERSION@"
-  "Current version of lyqi.")
-
 (defun lyqi-version ()
   "Display the current version of lyqi."
   (interactive)
@@ -89,15 +86,15 @@ Otherwise, return NIL."
              (intern (match-string-no-properties 1)))
         (lyqi-file-in-defined-projects-p (buffer-file-name))
         (and (re-search-forward "\\(^\\|[ \t]\\)\\(do\\|re\\|mi\\|fa\\|sol\\|la\\|si\\)[',]*[1248]" nil t)
-             'italiano) ;; TODO: choose first do-re-mi language from `lyqi-prefered-languages'
+             'italiano) ;; TODO: choose first do-re-mi language from `lyqi-preferred-languages'
         (and (re-search-forward "\\(^\\|[ \t]\\)[a-h][',]*[1248]" nil t)
-             'nederlands) ;; TODO: choose first a-b-c language from `lyqi-prefered-languages'
-        (first lyqi-prefered-languages))))
+             'nederlands) ;; TODO: choose first a-b-c language from `lyqi-preferred-languages'
+        (first lyqi-preferred-languages))))
 
 (defun lyqi-select-next-language (&optional syntax)
   (interactive)
-  (let* ((syntax (or syntax (lp:current-syntax)))
-         (current-language (slot-value (lyqi-language syntax) 'name))
+  (let* ((syntax (or syntax lp--current-syntax))
+         (current-language (slot-value (lyqi--language syntax) 'name))
          (next-language (loop with possible-languages = (slot-value syntax 'possible-languages)
                               for langs on possible-languages
                               for lang = (first langs)
@@ -105,7 +102,7 @@ Otherwise, return NIL."
                               return (or (cadr langs) (first possible-languages)))))
     (set-slot-value syntax 'language (lyqi-select-language next-language))
     (force-mode-line-update)
-    (lp:parse-and-highlight-buffer)))
+    (lyqi--parse-and-highlight-buffer)))
 
 ;;;
 ;;; Mode maps
@@ -117,11 +114,7 @@ Otherwise, return NIL."
     (define-key map "\C-c\C-l" 'lyqi-compile-ly)
     (define-key map "\C-c\C-s" 'lyqi-open-pdf)
     (define-key map [(control c) return] 'lyqi-open-midi)
-;(define-key map "(" 'lyqi-insert-opening-delimiter)
-;(define-key map "{" 'lyqi-insert-opening-delimiter)
-    (define-key map "<" 'lyqi-insert-opening-delimiter)
     (define-key map "\"" 'lyqi-insert-delimiter)
-;(define-key map ")" 'lyqi-insert-closing-delimiter)
     (define-key map "}" 'lyqi-insert-closing-delimiter)
     (define-key map ">" 'lyqi-insert-closing-delimiter)
     (define-key map [tab] 'lyqi-indent-line)
@@ -150,7 +143,7 @@ Otherwise, return NIL."
 
 (defun lyqi-toggle-quick-edit-mode (&optional syntax)
   (interactive)
-  (let* ((syntax (or syntax (lp:current-syntax)))
+  (let* ((syntax (or syntax lp--current-syntax))
          (quick-edit-mode (not (slot-value syntax 'quick-edit-mode))))
     (set-slot-value syntax 'quick-edit-mode quick-edit-mode)
     (if quick-edit-mode
@@ -210,7 +203,8 @@ Otherwise, return NIL."
     ("p" lyqi-change-duration-dots)
     ;; also available: lyqi-change-duration-64 lyqi-change-duration-128
     ;; Undo
-    ("u" undo)))
+    ("u" undo)
+    ("<" lyqi-insert-opening-delimiter)))
 
 (defconst lyqi-+qwerty-lr-mode-map+
   '(;; Rest, skip, etc
@@ -342,9 +336,9 @@ Otherwise, return NIL."
 (defun lyqi-set-mode-line-modes ()
   (setq mode-line-modes
         '("%[("
-          (:eval (propertize (if (slot-value (lp:current-syntax) 'quick-edit-mode)
+          (:eval (propertize (if (slot-value lp--current-syntax 'quick-edit-mode)
                                  (format "%s:quick insert" mode-name)
-                                 mode-name)
+			       mode-name)
                              'help-echo "mouse-1: toggle edit mode, mouse-2: major mode help, mouse-3: toggle minor modes"
                              'mouse-face 'mode-line-highlight
                              'local-map '(keymap
@@ -354,7 +348,7 @@ Otherwise, return NIL."
                                            (down-mouse-1 . lyqi-mode-line-toggle-quick-edit-mode)))))
           ", "
           (:eval (propertize (format "lang: %s"
-                                     (substring (symbol-name (slot-value (lyqi-language (lp:current-syntax)) 'name))
+                                     (substring (symbol-name (slot-value (lyqi--language lp--current-syntax) 'name))
                                                 0 2))
                              'help-echo "select next language"
                              'mouse-face 'mode-line-highlight
@@ -382,7 +376,14 @@ Otherwise, return NIL."
                                                       keymap (mouse-1 . lyqi-mode-line-lyqi-mode))))))
           ")%]  ")))
 
-(defvar lyqi-mode-syntax-table nil
+(defvar lyqi-mode-syntax-table
+  (let ((st (make-syntax-table (standard-syntax-table))))
+    (modify-syntax-entry ?\' "w" st)
+    (modify-syntax-entry ?\, "w" st)
+    (modify-syntax-entry ?\. "w" st)
+    (modify-syntax-entry ?\* "w" st)
+    (modify-syntax-entry ?\/ "w" st)
+    st)
   "Syntax table used in `lyqi-mode' buffers.")
 
 ;;;###autoload
@@ -398,14 +399,6 @@ In quick insertion mode:
   (kill-all-local-variables)
   (setq major-mode 'lyqi-mode)
   (setq mode-name "Lyqi")
-  ;; syntax table
-  (make-local-variable 'lyqi-mode-syntax-table)
-  (setq lyqi-mode-syntax-table (make-syntax-table (standard-syntax-table)))
-  (modify-syntax-entry ?\' "w" lyqi-mode-syntax-table)
-  (modify-syntax-entry ?\, "w" lyqi-mode-syntax-table)
-  (modify-syntax-entry ?\. "w" lyqi-mode-syntax-table)
-  (modify-syntax-entry ?\* "w" lyqi-mode-syntax-table)
-  (modify-syntax-entry ?\/ "w" lyqi-mode-syntax-table)
   (set-syntax-table lyqi-mode-syntax-table)
   ;; insert template when visiting new file
   (when (= (buffer-size) 0)
@@ -421,19 +414,19 @@ In quick insertion mode:
   (make-local-variable 'before-change-functions)
   (make-local-variable 'after-change-functions)
   (pushnew 'lp:before-parse-update before-change-functions)
-  (setq after-change-functions '(lp:parse-update))
+  (setq after-change-functions '(lyqi--parse-update))
   ;; avoid point adjustment
   (make-local-variable 'global-disable-point-adjustment)
   (setq global-disable-point-adjustment t)
   ;; buffer syntax
-  (make-local-variable 'lp:*current-syntax*)
-  (unless lp:*current-syntax*
+  (make-local-variable 'lp--current-syntax)
+  (unless lp--current-syntax
     (let ((lang (lyqi-detect-buffer-language)))
-      (setq lp:*current-syntax*
+      (setq lp--current-syntax
             (make-instance 'lyqi-lilypond-syntax
                            :language (lyqi-select-language lang)))
-      (pushnew lang (slot-value lp:*current-syntax* 'possible-languages))))
-  (lp:parse-and-highlight-buffer)
+      (pushnew lang (slot-value lp--current-syntax 'possible-languages))))
+  (lyqi--parse-and-highlight-buffer)
   ;; buffer master file
   (make-local-variable 'lyqi-buffer-master-file)
   ;; mode line modes

@@ -12,6 +12,6 @@ AC_MSG_RESULT([$hyphenation_patterns_dir])
 AC_PATH_PROG([LILYPOND],[lilypond])
 LYQI_CHECK_LILYPOND
 
-AC_CONFIG_FILES(hyphenate.el package_header.el lyqi-main.el
+AC_CONFIG_FILES(hyphenate.el package_header.el lyqi-config.el
                 Makefile)
 AC_OUTPUT

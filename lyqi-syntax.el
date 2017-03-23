@@ -30,6 +30,23 @@
 (eval-when-compile (require 'lyqi-lilypond-words))
 
 ;;;
+;;; low level functions
+;;;
+(defmacro ly-octave-to-string (octave)
+  "Make a lilypond octave string from number"
+  `(make-string (abs ,octave) (if (< ,octave 0)
+				  ?\,
+				?\')))
+
+(defun ly-string-to-octave (str)
+  "Convert the lilypond octave string STR to number"
+  (let ((l (length str)))
+    (if (and str
+	     (/= l 0))
+	(* l (if (= (aref str 0) ?\') 1 -1))
+      0)))
+
+;;;
 ;;; Lexer states
 ;;;
 (defclass lyqi-lilypond-parser-state (lp:parser-state)
@@ -80,7 +97,7 @@
 ;;;
 (defclass lyqi-lilypond-syntax (lp-syntax)
   ((language              :initarg :language
-                          :accessor lyqi-language)
+                          :accessor lyqi--language)
    (possible-languages)
    (quick-edit-mode       :initform nil)))
 
@@ -91,45 +108,23 @@
                   (make-instance 'lyqi--toplevel-parser-state)))
 
 ;;;
-;;; Music type mixins
-;;;
-(defclass lyqi-note-mixin ()
-  ((pitch :initarg :pitch)
-   (alteration :initarg :alteration
-               :initform 0)
-   (octave-modifier :initarg :octave-modifier
-                    :initform 0)
-   (accidental :initform nil
-               :initarg :accidental)))
-
-(defclass lyqi-duration-mixin ()
-  ((length      :initarg :length
-                :initform nil)
-   (dot-count   :initarg :dot-count
-                :initform 0)
-   (numerator   :initarg :numerator
-                :initform 1)
-   (denominator :initarg :denominator
-                :initform 1)))
-
-;;;
 ;;; Lexemes
 ;;;
 
-(defclass lyqi-verbatim-lexeme (lp:lexeme) ())
+(defclass lyqi-verbatim-lexeme (lp--lexeme) ())
 
-(defclass lyqi-note-lexeme (lp:lexeme lyqi-note-mixin) ())
-(defclass lyqi-rest-skip-etc-lexeme (lp:lexeme) ())
+(defclass lyqi-note-lexeme (lp--lexeme lyqi--note-mixin) ())
+(defclass lyqi-rest-skip-etc-lexeme (lp--lexeme) ())
 (defclass lyqi-rest-lexeme (lyqi-rest-skip-etc-lexeme) ())
 (defclass lyqi-note-rest-lexeme (lyqi-rest-lexeme) ())
 (defclass lyqi-mm-rest-lexeme (lyqi-rest-skip-etc-lexeme) ())
 (defclass lyqi-space-lexeme (lyqi-rest-skip-etc-lexeme) ())
 (defclass lyqi-skip-lexeme (lyqi-rest-skip-etc-lexeme) ())
 (defclass lyqi-chord-repetition-lexeme (lyqi-rest-skip-etc-lexeme) ())
-(defclass lyqi-chord-start-lexeme (lp:lexeme) ())
-(defclass lyqi-chord-end-lexeme (lp:lexeme) ())
-(defclass lyqi-base-duration-lexeme (lp:lexeme) ())
-(defclass lyqi-duration-lexeme (lyqi-base-duration-lexeme lyqi-duration-mixin) ())
+(defclass lyqi-chord-start-lexeme (lp--lexeme) ())
+(defclass lyqi-chord-end-lexeme (lp--lexeme) ())
+(defclass lyqi-base-duration-lexeme (lp--lexeme) ())
+(defclass lyqi-duration-lexeme (lyqi-base-duration-lexeme lyqi--duration-mixin) ())
 (defclass lyqi-no-duration-lexeme (lyqi-base-duration-lexeme) ())
 
 (defclass lyqi-simultaneous-start-lexeme (lp:opening-delimiter-lexeme) ())
@@ -137,7 +132,7 @@
 (defclass lyqi-sequential-start-lexeme (lp:opening-delimiter-lexeme) ())
 (defclass lyqi-sequential-end-lexeme (lp:closing-delimiter-lexeme) ())
 
-(defclass lyqi-backslashed-lexeme (lp:lexeme) ())
+(defclass lyqi-backslashed-lexeme (lp--lexeme) ())
 (defclass lyqi-keyword-lexeme (lp:builtin-lexeme lyqi-backslashed-lexeme) ())
 (defclass lyqi-variable-lexeme (lp:variable-name-lexeme lyqi-backslashed-lexeme) ())
 (defclass lyqi-function-lexeme (lp:function-name-lexeme lyqi-backslashed-lexeme) ())
@@ -158,7 +153,7 @@ and NIL if it is an implicit duration lexeme.")
   t)
 
 ;; scheme
-(defclass lyqi-scheme-lexeme (lp:lexeme) ())
+(defclass lyqi-scheme-lexeme (lp--lexeme) ())
 (defclass lyqi-scheme-number-lexeme (lyqi-scheme-lexeme) ())
 (defclass lyqi-scheme-symbol-lexeme (lyqi-scheme-lexeme)
   ((special-args :initarg :special-args
@@ -197,7 +192,7 @@ and NIL if it is an implicit duration lexeme.")
 (defgeneric lyqi-form-with-duration-p (parser-symbol)
   "If `parser-symbol' is a music form, i.e. somthing
 with a duration, then return its duration.")
-(defmethod lyqi-form-with-duration-p ((this lp:parser-symbol))
+(defmethod lyqi-form-with-duration-p ((this lp--parser-symbol))
   nil)
 (defmethod lyqi-form-with-duration-p ((this lyqi-music-form))
   (lyqi-duration-of this))
@@ -216,23 +211,23 @@ Oterwise, return NIL."
 ;;; Fontification of lexemes and forms
 ;;;
 
-(defmethod lp:fontify ((this lyqi-verbatim-form))
+(defmethod lp--fontify ((this lyqi-verbatim-form))
   nil)
 
-(defmethod lp:face ((this lyqi-note-lexeme))
+(defmethod lp--face ((this lyqi-note-lexeme))
   '(face font-lock-constant-face))
 
-(defmethod lp:face ((this lyqi-chord-start-lexeme))
+(defmethod lp--face ((this lyqi-chord-start-lexeme))
   '(face font-lock-constant-face))
 
-(defmethod lp:face ((this lyqi-music-form))
+(defmethod lp--face ((this lyqi-music-form))
   '(face font-lock-constant-face))
 
-(defmethod lp:fontify ((this lyqi-music-form))
+(defmethod lp--fontify ((this lyqi-music-form))
   (let* ((start (marker-position (lp--marker this)))
          (end (+ start (lp:size this))))
     (when (> end start)
-      (lp:fontify-region start end (lp:face this)))))
+      (lp--fontify-region start end (lp--face this)))))
 
 ;;;
 ;;; Lex functions
@@ -364,7 +359,7 @@ Oterwise, return NIL."
         ;; - reduce preceding verbatim lexemes (if any)
         ;; - lex the note and add the lexeme to the output parse data
         ;; - switch to {note-duration?} lexer state
-        ((looking-at (slot-value (lyqi-language syntax) 'note-regex))
+        ((looking-at (slot-value (lyqi--language syntax) 'note-regex))
          (values (lyqi-make-parser-state 'lyqi-note-duration?-parser-state
                                          parser-state
                                          :form-class 'lyqi-simple-note-form
@@ -375,7 +370,7 @@ Oterwise, return NIL."
         ;; - reduce preceding verbatim lexemes (if any)
         ;; - lex the rest/skip/etc and add the lexeme to the output parse data
         ;; - switch to {duration?} lexer state
-        ((looking-at (slot-value (lyqi-language syntax) 'rest-skip-regex))
+        ((looking-at (slot-value (lyqi--language syntax) 'rest-skip-regex))
          (values (lyqi-make-parser-state 'lyqi-duration?-parser-state
                                          parser-state
                                          :form-class 'lyqi-rest-skip-etc-form
@@ -474,7 +469,7 @@ Oterwise, return NIL."
                  (lyqi-reduce-lexemes parser-state)
                  nil))
         ;; a note
-        ((looking-at (slot-value (lyqi-language syntax) 'note-regex))
+        ((looking-at (slot-value (lyqi--language syntax) 'note-regex))
          (lp:push-lexeme parser-state (lyqi--lex-note syntax))
          (values parser-state
                  nil
@@ -679,39 +674,6 @@ Return two values:
           ;; continue scan
           else do (forward-char 1) and do (incf size))))
 
-(defun lyqi--lex-note (syntax)
-  (let ((pitch 0)
-        (alteration 0)
-        (octave-modifier 0)
-        (marker (point-marker))
-        (accidental nil))
-    (when (looking-at (slot-value (lyqi-language syntax) 'pitch-regex))
-      ;; pitch and alteration
-      (let ((pitch-data (assoc (match-string-no-properties 0)
-                               (slot-value (lyqi-language syntax) 'name->pitch))))
-        (setf pitch (second pitch-data))
-        (setf alteration (third pitch-data)))
-      (lyqi--forward-match)
-      ;; octave
-      (when (looking-at (slot-value (lyqi-language syntax) 'octave-regex))
-        (setf octave-modifier
-	      (ly-string-to-octave (match-string 0)))
-	(lyqi--forward-match))
-      ;; accidental
-      (cond ((eql (char-after) ?\!)
-             (forward-char 1)
-             (setf accidental 'forced))
-            ((eql (char-after) ?\?)
-             (forward-char 1)
-             (setf accidental 'cautionary))))
-    (make-instance 'lyqi-note-lexeme
-                   :pitch pitch
-                   :alteration alteration
-                   :octave-modifier octave-modifier
-                   :accidental accidental
-                   :marker marker
-                   :size (- (point) marker))))
-
 (defun lyqi-lex-rest-skip-etc (syntax)
   (let* ((marker (point-marker))
          (size 1))
@@ -736,7 +698,7 @@ Return two values:
 
 (defun lyqi-lex-duration (syntax)
   (if (or (eolp)
-          (not (looking-at (slot-value (lyqi-language syntax) 'duration-regex))))
+          (not (looking-at (slot-value (lyqi--language syntax) 'duration-regex))))
       ;; implicit duration
       (make-instance 'lyqi-no-duration-lexeme
                      :marker (point-marker)
@@ -747,10 +709,10 @@ Return two values:
             (num 1)
             (den 1)
             (marker (point-marker)))
-        (when (looking-at (slot-value (lyqi-language syntax) 'duration-length-regex))
+        (when (looking-at (slot-value (lyqi--language syntax) 'duration-length-regex))
           ;; length
           (setf length (cdr (assoc (match-string-no-properties 0)
-                                   (slot-value (lyqi-language syntax) 'duration-data))))
+                                   (slot-value (lyqi--language syntax) 'duration-data))))
           (lyqi--forward-match)
           ;; dots
           (when (and (not (eolp))

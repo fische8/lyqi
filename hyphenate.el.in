@@ -276,7 +276,7 @@ and requested node doesn't exist"
 	(skip-chars-forward "^a-zA-Záéíóúñäëöü") ;; find next word
 	(setq word-beg (point))
 	(forward-word)
-	(insert	(ly:hyphenate-word 
+	(insert	(ly-hyphenate-word 
 		 (prog1
 		     (buffer-substring-no-properties word-beg (point))
 		   (delete-region word-beg (point)))))))))

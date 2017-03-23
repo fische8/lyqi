@@ -53,8 +53,8 @@
   "Find one duration (implicit or explicit) plus one explicit duration, backwards.
 Return two values."
   (loop with duration1 = nil
-        for (form current-line rest-forms) = (lp:form-before-point syntax position)
-        then (lp:previous-form current-line rest-forms)
+        for (form current-line rest-forms) = (lp-form-before-point syntax position)
+        then (lp-previous-form current-line rest-forms)
         while form
         for duration = (lyqi-form-with-duration-p form)
         if (and (not duration1) duration)
@@ -154,7 +154,7 @@ duration object has no dot nor numerator nor denominator."
                                       previous-duration)))
                 (if ref-duration
                     (values (car (rassoc (slot-value ref-duration 'length)
-                                         (slot-value (lyqi-language syntax) 'duration-data)))
+                                         (slot-value (lyqi--language syntax) 'duration-data)))
                             (mod (1+ (slot-value ref-duration 'dot-count)) 5)
                             (slot-value ref-duration 'numerator)
                             (slot-value ref-duration 'denominator))
@@ -244,8 +244,8 @@ duration object has no dot nor numerator nor denominator."
 (defun lyqi-find-note-backward (syntax position &optional stop-on-rests)
   "Find note backwards.  If `stop-on-rests' is not NIL, then stop
 searching as soon as a rest, skip, etc is found."
-  (loop for (form current-line rest-forms) = (lp:form-before-point syntax position)
-        then (lp:previous-form current-line rest-forms)
+  (loop for (form current-line rest-forms) = (lp-form-before-point syntax position)
+        then (lp-previous-form current-line rest-forms)
         while form
         if (and stop-on-rests (lyqi-rest-skip-etc-form-p form)) return nil
         for note = (lyqi-form-with-note-p form)
@@ -253,17 +253,12 @@ searching as soon as a rest, skip, etc is found."
 
 (defun lyqi-insert-note (syntax note play-note &optional insert-default-duration)
   (with-slots (pitch alteration octave-modifier accidental) note
-    (let ((note-string (lyqi-pitchname (lyqi-language syntax) pitch alteration))
-          (octave-string (cond ((= octave-modifier 0)
-                                "")
-                               ((> octave-modifier 0)
-                                (make-string octave-modifier ?\'))
-                               (t
-                                (make-string (- octave-modifier) ?\,))))
+    (let ((note-string (lyqi-pitchname (lyqi--language syntax) pitch alteration))
+          (octave-string (ly-octave-to-string octave-modifier))
           (accidental-string (case accidental
-                               ((forced) "!")
-                               ((cautionary) "?")
-                               (t ""))))
+				   ((forced) "!")
+				   ((cautionary) "?")
+				   (t ""))))
       (insert (format "%s%s%s%s"
                       note-string octave-string accidental-string
                       (if insert-default-duration "4" "")))))
@@ -281,13 +276,13 @@ searching as soon as a rest, skip, etc is found."
          (previous-note (lyqi-find-note-backward syntax (point)))
          (new-note (if previous-note
                        (with-slots ((pitch0 pitch) (octave0 octave-modifier)) previous-note
-                         (make-instance 'lyqi-note-mixin
+                         (make-instance 'lyqi--note-mixin
                                         :pitch pitch
                                         :alteration (aref lyqi--alterations pitch)
                                         :octave-modifier (cond ((> (- pitch pitch0) 3) (1- octave0))
                                                                ((> (- pitch0 pitch) 3) (1+ octave0))
                                                                (t octave0))))
-                       (make-instance 'lyqi-note-mixin
+                       (make-instance 'lyqi--note-mixin
                                       :pitch pitch
                                       :alteration (aref lyqi--alterations pitch))))
          (previous-duration
@@ -457,8 +452,8 @@ For instance:
                                          ((equal adj "-") -2)
                                          (t 0))
             with beginning = (region-beginning)
-            for (form current-line rest-forms) = (lp:form-before-point syntax (region-end))
-            then (lp:previous-form current-line rest-forms)
+            for (form current-line rest-forms) = (lp-form-before-point syntax (region-end))
+            then (lp-previous-form current-line rest-forms)
             while (and form (>= (lp--marker form) beginning))
             if (lyqi-note-lexeme-p form)
             do (lyqi-transpose-note form syntax note-diff alteration-diff)
@@ -488,7 +483,7 @@ block, delimiters are {} and <>,
 whereas in a Scheme block, delimiters are parens."
   (interactive "p")
   (multiple-value-bind (form line rest-forms)
-      (lp:form-before-point lp--current-syntax (point))
+      (lp-form-before-point lp--current-syntax (point))
     (let ((delim last-command-event))
       (if (and form (object-of-class-p form 'lyqi-scheme-lexeme))
           ;; scheme context
@@ -523,8 +518,45 @@ whereas in a Scheme block, delimiters are parens."
     (if (and (not (eolp))
              (= delim (char-after (point))))
         (forward-char)
-        (progn
-          (insert-char delim (* 2 (or n 1)))
-          (backward-char (or n 1))))))
+      (progn
+	(insert-char delim (* 2 (or n 1)))
+	(backward-char (or n 1))))))
+
+(defun lyqi-relativize-block ()
+  "Transform a block from absolute mode to relative"
+  (interactive)
+  (let* ((limits (lyqi--block-limits))
+	 (eob (set-marker (make-marker) (cadr limits)))
+	 (ref-note (make-instance 'lyqi--note-mixin :pitch 0))
+	 cur-note)
+    (save-excursion
+      ;; (goto-char (car limits))
+      ;; (while (< (point) eob)
+      ;; 	(lyqi--skip-all-whitespace)
+      ;; 	(setq cur-note (lyqi--lex-note lp--current-syntax))
+      ;; 	(lyqi--note-to-relative cur-note ref-note)
+      ;; 	(setq ref-note cur-note)))))
+      (loop with syntax = lp--current-syntax
+            with beginning = (car limits)
+            for (form current-line rest-forms) = (lp-form-before-point syntax (region-end))
+            then (lp-previous-form current-line rest-forms)
+            while (and form (>= (lp--marker form) beginning))
+            if (lyqi-note-lexeme-p form)
+            do (lyqi--note-to-relative form syntax)
+            if (lyqi-simple-note-form-p form)
+            do (loop for lexeme in (slot-value form 'children)
+                     if (lyqi-note-lexeme-p lexeme)
+                     do (lyqi--note-to-relative ))))))
+
+(defun lyqi--note-to-relative (cur prev)
+  (let ((oct-rel (- (oref cur octave-modifier)
+		    (oref prev octave-modifier)))
+	(pitch (oref cur pitch)))
+    (with-slots ((pitch0 pitch)
+		 (octave0 octave-modifier) prev)
+		(setq oct-rel (cond ((> (- pitch pitch0) 3) (1+ oct-rel))
+				    ((> (- pitch0 pitch) 3) (1- oct-rel))
+				    (t oct-rel))))
+    (ly-octave-to-string oct-rel)))
 
 (provide 'lyqi-editing-commands)

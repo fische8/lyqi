@@ -29,7 +29,7 @@ distdir = $(PACKAGE)-$(VERSION)
 
 # the order here is the order in lyqi.el. Symbols should be defined
 # when they are used
-IN_SOURCES = lp-base.el lyqi-lilypond-words.el			\
+IN_SOURCES = lyqi-config.el.in lp-base.el lyqi-lilypond-words.el	\
              lyqi-vars.el lyqi-syntax.el completion.el		\
              hyphenate.el.in					\
              lyqi-templates.el					\
@@ -99,6 +99,8 @@ osx: lyqi.elc
 	cd EmacsPointAndClick && make all
 	cd MidiScript && make all
 
+TAGS : $(IN_SOURCES)
+	etags -l lisp $(IN_SOURCES)
 install-source: lyqi.el lyqi-lilypond-words.el
 	$(INSTALL) -m755 -o root -g root -d $(DESTDIR)/usr/share/emacs/site-lisp/lyqi-mode
 	$(INSTALL) -m644 -o root -g root lyqi.el $(DESTDIR)/usr/share/emacs/site-lisp/lyqi-mode
@@ -123,7 +125,7 @@ clean:
 
 distclean: clean
 	rm -f *~
-	rm -f lyqi-lilypond-words.el lyqi-words*.el
+	rm -f lyqi-lilypond-words.el lyqi-words*.el TAGS
 	rm -rf config.status config.log  autom4te.cache $(config_generated_files)
 
 .PHONY: osx linux dist clean distclean install-source install-bytecode

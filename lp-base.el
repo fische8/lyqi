@@ -53,11 +53,11 @@
      :initarg :default-parser-state
      :accessor lp-default-parser-state)
    (first-line :initform nil
-               :accessor lp:first-line)
+               :accessor lp--first-line)
    (last-line :initform nil
-              :accessor lp:last-line)
+              :accessor lp--last-line)
    (current-line :initform nil
-                 :accessor lp:current-line)
+                 :accessor lp--current-line)
    ;; set by a before-change function, so that
    ;; an after-change-function can update the parse:
    (first-modified-line :initform nil)
@@ -69,9 +69,6 @@
 
 (defvar lp--current-syntax nil
   "The current buffer syntax object")
-
-(defun lp--current-syntax ()
-  lp--current-syntax)
 
 (defmethod object-print ((this lp-syntax) &rest strings)
   (format "#<%s>" (object-class this)))
@@ -87,15 +84,15 @@
   ((marker :initarg :marker
            :accessor lp--marker)
    (forms :initarg :forms
-          :accessor lp:line-forms)
+          :accessor lp--line-forms)
    (parser-state :initform nil
                  :initarg :parser-state)
    (previous-line :initform nil
                   :initarg :previous-line
-                  :accessor lp:previous-line)
+                  :accessor lp--previous-line)
    (next-line :initform nil
               :initarg :next-line
-              :accessor lp:next-line)))
+              :accessor lp--next-line)))
 
 (defmethod lp:line-end-position ((this lp--line-parse))
   (save-excursion
@@ -106,11 +103,11 @@
   (format "#<%s [%s] %s forms>"
             (object-class this)
             (marker-position (lp--marker this))
-            (length (lp:line-forms this))))
+            (length (lp--line-forms this))))
 
 (defmethod lp:debug-display ((this lp-syntax) &optional indent)
   (let ((indent (or indent 0)))
-    (loop for line = (lp:first-line this) then (lp:next-line line)
+    (loop for line = (lp--first-line this) then (lp--next-line line)
           for i from 1
           while line
           do (princ (format "Line %d " i))
@@ -124,8 +121,8 @@
              (make-string indent ?\ )
              (marker-position (lp--marker this))
              (object-class (slot-value this 'parser-state))
-             (length (lp:line-forms this))))
-    (loop for form in (lp:line-forms this)
+             (length (lp--line-forms this))))
+    (loop for form in (lp--line-forms this)
           do (lp:debug-display form (+ indent 2)))
     t))
 
@@ -135,24 +132,24 @@
   (when next
     (set-slot-value next 'previous-line first)))
 
-(defun lp:previous-form (line &optional rest-forms)
+(defun lp-previous-form (line &optional rest-forms)
   "For backward iteration on forms, across lines.
 Return three values:
  - the previous form
  - the form line
  - the remaining forms on this line
 
-See also `lp:form-before-point'."
+See also `lp-form-before-point'."
   (if rest-forms
       (values (first rest-forms) line (rest rest-forms))
       (when line
-        (let* ((prev-line (lp:previous-line line))
-               (prev-forms (and prev-line (reverse (lp:line-forms prev-line)))))
+        (let* ((prev-line (lp--previous-line line))
+               (prev-forms (and prev-line (reverse (lp--line-forms prev-line)))))
           (if prev-forms
               (values (first prev-forms) prev-line (rest prev-forms))
-              (lp:previous-form prev-line))))))
+              (lp-previous-form prev-line))))))
 
-(defun lp:form-before-point (syntax position)
+(defun lp-form-before-point (syntax position)
   "Return three values:
 - the form preceding position
 - the form line
@@ -160,18 +157,18 @@ See also `lp:form-before-point'."
 
 To perform a backward search on forms from (point), do e.g.:
 
-  (loop for (form line rest-forms) = (lp:form-before-point syntax position)
-        then (lp:previous-form line rest-forms)
+  (loop for (form line rest-forms) = (lp-form-before-point syntax position)
+        then (lp-previous-form line rest-forms)
         ...)"
-  (let ((line (lp:find-line syntax position)))
+  (let ((line (lp-find-line syntax position)))
     (when line
-      (loop for forms on (reverse (lp:line-forms line))
+      (loop for forms on (reverse (lp--line-forms line))
             if (< (lp--marker (first forms)) position)
             return (values (first forms) line (rest forms))
-            finally return (lp:previous-form line)))))
+            finally return (lp-previous-form line)))))
 
 ;;; Base class for forms and lexemes
-(defclass lp:parser-symbol ()
+(defclass lp--parser-symbol ()
   ((marker :initform nil
            :initarg :marker
            :accessor lp--marker)
@@ -180,9 +177,37 @@ To perform a backward search on forms from (point), do e.g.:
          :accessor lp:size)
    (children :initarg :children
              :initform nil
-             :accessor lp:children)))
+             :accessor lp--children)))
 
-(defmethod object-write ((this lp:parser-symbol) &optional comment)
+;;;
+;;; Music type mixins
+;;;
+(defclass lyqi--note-mixin ()
+  ((pitch :initarg :pitch)
+   (alteration :initarg :alteration
+               :initform 0)
+   (octave-modifier :initarg :octave-modifier
+                    :initform 0)
+   (accidental :initform nil
+               :initarg :accidental)))
+
+(defclass lyqi--duration-mixin ()
+  ((length      :initarg :length
+                :initform nil)
+   (dot-count   :initarg :dot-count
+                :initform 0)
+   (numerator   :initarg :numerator
+                :initform 1)
+   (denominator :initarg :denominator
+                :initform 1)))
+
+;;;
+;;; text forms
+;;;
+
+(defclass lyqi-note-form (lp--parser-symbol lyqi--note-mixin) ())
+
+(defmethod object-print2 ((this lp--parser-symbol) &optional comment)
   (let* ((marker (lp--marker this))
          (size (lp:size this))
          (start (and marker (marker-position marker)))
@@ -195,10 +220,10 @@ To perform a backward search on forms from (point), do e.g.:
     (mapc (lambda (lexeme)
 	    (princ " ")
 	    (princ (object-class lexeme)))
-	  (lp:children this))
+	  (lp--children this))
     (princ ">\n")))
 
-(defmethod object-print ((this lp:parser-symbol) &rest strings)
+(defmethod object-print ((this lp--parser-symbol) &rest strings)
   (let* ((marker (lp--marker this))
          (size (lp:size this))
          (start (and marker (marker-position marker)))
@@ -207,48 +232,48 @@ To perform a backward search on forms from (point), do e.g.:
             (object-class this)
             (or start "?") (or end "?"))))
 
-(defmethod lp:debug-display ((this lp:parser-symbol) &optional indent)
+(defmethod lp:debug-display ((this lp--parser-symbol) &optional indent)
   (let ((indent (or indent 0)))
     (princ (format "%s[%s-%s] %s: %s\n"
                    (make-string indent ?\ )
                    (marker-position (lp--marker this))
                    (+ (lp--marker this) (lp:size this))
                    (object-class this)
-                   (lp:string this)))))
+                   (lp--string this)))))
 
-(defmethod lp:string ((this lp:parser-symbol))
+(defmethod lp--string ((this lp--parser-symbol))
   (with-slots (marker size) this
     (buffer-substring-no-properties marker (+ marker size))))
 
 ;;; Forms (produced by reducing lexemes)
-(defclass lp:form (lp:parser-symbol) ())
+(defclass lp:form (lp--parser-symbol) ())
 
 ;;; Lexemes (produced when lexing)
-(defclass lp:lexeme (lp:parser-symbol) ())
+(defclass lp--lexeme (lp--parser-symbol) ())
 
-(defclass lp:comment-lexeme (lp:lexeme) ())
-(defclass lp:comment-delimiter-lexeme (lp:lexeme) ())
-(defclass lp:string-lexeme (lp:lexeme) ())
-(defclass lp:doc-lexeme (lp:lexeme) ())
-(defclass lp:keyword-lexeme (lp:lexeme) ())
-(defclass lp:builtin-lexeme (lp:lexeme) ())
-(defclass lp:function-name-lexeme (lp:lexeme) ())
-(defclass lp:variable-name-lexeme (lp:lexeme) ())
-(defclass lp:type-lexeme (lp:lexeme) ())
-(defclass lp:constant-lexeme (lp:lexeme) ())
-(defclass lp:warning-lexeme (lp:lexeme) ())
-(defclass lp:negation-char-lexeme (lp:lexeme) ())
-(defclass lp:preprocessor-lexeme (lp:lexeme) ())
+(defclass lp:comment-lexeme (lp--lexeme) ())
+(defclass lp:comment-delimiter-lexeme (lp--lexeme) ())
+(defclass lp:string-lexeme (lp--lexeme) ())
+(defclass lp:doc-lexeme (lp--lexeme) ())
+(defclass lp:keyword-lexeme (lp--lexeme) ())
+(defclass lp:builtin-lexeme (lp--lexeme) ())
+(defclass lp:function-name-lexeme (lp--lexeme) ())
+(defclass lp:variable-name-lexeme (lp--lexeme) ())
+(defclass lp:type-lexeme (lp--lexeme) ())
+(defclass lp:constant-lexeme (lp--lexeme) ())
+(defclass lp:warning-lexeme (lp--lexeme) ())
+(defclass lp:negation-char-lexeme (lp--lexeme) ())
+(defclass lp:preprocessor-lexeme (lp--lexeme) ())
 
-(defclass lp:delimiter-lexeme (lp:lexeme) ())
+(defclass lp:delimiter-lexeme (lp--lexeme) ())
 (defclass lp:opening-delimiter-lexeme (lp:delimiter-lexeme) ())
 (defclass lp:closing-delimiter-lexeme (lp:delimiter-lexeme) ())
 
-(defmethod lp:opening-delimiter-p ((this lp:parser-symbol))
+(defmethod lp:opening-delimiter-p ((this lp--parser-symbol))
   nil)
 (defmethod lp:opening-delimiter-p ((this lp:opening-delimiter-lexeme))
   t)
-(defmethod lp:closing-delimiter-p ((this lp:parser-symbol))
+(defmethod lp:closing-delimiter-p ((this lp--parser-symbol))
   nil)
 (defmethod lp:closing-delimiter-p ((this lp:closing-delimiter-lexeme))
   t)
@@ -323,7 +348,7 @@ Return three values:
         (looking-at "\\S-+")
         (lyqi--forward-match)
         (values parser-state
-                (list (make-instance 'lp:lexeme
+                (list (make-instance 'lp--lexeme
                                      :marker marker
                                      :size (- (point) marker)))
                 (not (eolp))))))
@@ -332,7 +357,7 @@ Return three values:
 ;;; Parse functions
 ;;;
 
-(defun lp:parse (syntax &optional first-parser-state end-position)
+(defun lyqi--parse (syntax &optional first-parser-state end-position)
   "Parse lines in current buffer from point up to `end-position'.
 Return three values: the first parse line, the last parse
 line (i.e. both ends of double linked parse line list.), and the
@@ -350,10 +375,10 @@ Default values:
           for previous-line = nil then line
           for parser-state = first-parser-state then next-parser-state
           for marker = (point-marker)
-          for (forms next-parser-state) = (lp:parse-line syntax parser-state)
+          for (forms next-parser-state) = (lyqi--parse-line syntax parser-state)
           do (assert (= marker (point-at-bol))
                      nil
-                     "lp:parse error: lp:parse-line outreached a line end (%d, %d)"
+                     "lp:parse error: lyqi--parse-line outreached a line end (%d, %d)"
                      (marker-position marker) (point-at-bol)) ;; debug
           for line = (make-instance 'lp--line-parse
                                     :marker marker
@@ -368,7 +393,7 @@ Default values:
           ;; otherwise go to next line
           do (forward-line 1))))
 
-(defun lp:parse-line (syntax parser-state)
+(defun lyqi--parse-line (syntax parser-state)
   "Return a form list, built by parsing current buffer starting
 from current point up to the end of the current line."
   (loop for (new-parser-state forms continue)
@@ -388,14 +413,14 @@ supposed to be unchanged)"
       (set-marker-insertion-type marker nil)
       (set-slot-value line 'marker marker))
     (multiple-value-bind (forms next-state)
-        (lp:parse-line syntax (slot-value line 'parser-state))
+        (lyqi--parse-line syntax (slot-value line 'parser-state))
       (set-slot-value line 'forms forms))))
 
 ;;;
 ;;; Parse search
 ;;;
 
-(defun lp:find-lines (syntax position &optional length)
+(defun lp-find-lines (syntax position &optional length)
   "Search parse lines covering the region starting from
 `position' and covering `length' (which defaults to 0). Return
 two values: the first and the last parse line."
@@ -412,7 +437,7 @@ two values: the first and the last parse line."
                              (point-at-bol))
                            beginning-position)))
     (multiple-value-bind (search-type from-line)
-        (let ((current-line (lp:current-line syntax)))
+        (let ((current-line (lp--current-line syntax)))
           (if current-line
               (let* ((point-0/4 (point-min))
                      (point-4/4 (point-max))
@@ -420,9 +445,9 @@ two values: the first and the last parse line."
                      (point-1/4 (/ (- point-2/4 point-0/4) 2))
                      (point-3/4 (/ (+ point-2/4 point-4/4) 2)))
                 (cond ((<= point-3/4 end-position)
-                       (values 'backward (lp:last-line syntax)))
+                       (values 'backward (lp--last-line syntax)))
                       ((<= beginning-position point-1/4)
-                       (values 'forward (lp:first-line syntax)))
+                       (values 'forward (lp--first-line syntax)))
                       ((and (<= point-2/4 beginning-position) (<= beginning-position point-3/4))
                        (values 'forward current-line))
                       ((and (<= point-1/4 end-position) (<= end-position point-2/4))
@@ -431,38 +456,38 @@ two values: the first and the last parse line."
                        (values 'both current-line))))
               (let* ((point-1/2 (/ (+ (point-max) (point-min)) 2)))
                 (if (>= end-position point-1/2)
-                    (values 'backward (lp:last-line syntax))
-                    (values 'forward (lp:first-line syntax))))))
+                    (values 'backward (lp--last-line syntax))
+                    (values 'forward (lp--first-line syntax))))))
       (case search-type
         ((forward) ;; forward search from `from-line'
          (loop with first-line = nil
-               for line = from-line then (lp:next-line line)
+               for line = from-line then (lp--next-line line)
                if (= (lp--marker line) beginning-position)
                do (setf first-line line)
                if (= (lp--marker line) end-position)
                return (values first-line line)))
         ((backward) ;; backward search from `from-line'
          (loop with last-line = nil
-               for line = from-line then (lp:previous-line line)
+               for line = from-line then (lp--previous-line line)
                if (= (lp--marker line) end-position)
                do (setf last-line line)
                if (= (lp--marker line) beginning-position)
                return (values line last-line)))
         (t ;; search first line backward, and last-line forward from `from-line'
-         (values (loop for line = from-line then (lp:previous-line line)
+         (values (loop for line = from-line then (lp--previous-line line)
                        if (= (lp--marker line) beginning-position) return line)
-                 (loop for line = from-line then (lp:next-line line)
+                 (loop for line = from-line then (lp--next-line line)
                        if (= (lp--marker line) end-position) return line)))))))
 
-(defun lp:find-line (syntax position)
-  (let ((current-line (lp:current-line syntax)))
+(defun lp-find-line (syntax position)
+  (let ((current-line (lp--current-line syntax)))
     (if (and current-line
              (= (lp--marker current-line)
                 (save-excursion
                   (goto-char position)
                   (point-at-bol))))
         current-line
-        (first (lp:find-lines syntax position)))))
+        (first (lp-find-lines syntax position)))))
 
 ;;;
 ;;; Parse update
@@ -474,7 +499,7 @@ two values: the first and the last parse line."
      ,@body))
 (put 'lp:without-parse-update 'lisp-indent-function 0)
 
-(defun lp:parse-and-highlight-buffer ()
+(defun lyqi--parse-and-highlight-buffer ()
   "Make a full parse of current buffer and highlight text.  Set
 current syntax parse data (`first-line' and `last-line' slots)."
   (let ((syntax lp--current-syntax))
@@ -482,16 +507,16 @@ current syntax parse data (`first-line' and `last-line' slots)."
       ;; initialize the parse tree
       (save-excursion
         (goto-char (point-min))
-        (multiple-value-bind (first last state) (lp:parse syntax)
+        (multiple-value-bind (first last state) (lyqi--parse syntax)
           (set-slot-value syntax 'first-line first)
           (set-slot-value syntax 'last-line last)))
       ;; remove previous fontification
       (lp:unfontify syntax)
       ;; fontify the buffer
-      (loop for line = (lp:first-line syntax)
-            then (lp:next-line line)
+      (loop for line = (lp--first-line syntax)
+            then (lp--next-line line)
             while line
-            do (mapc #'lp:fontify (lp:line-forms line))))))
+            do (mapc #'lp--fontify (lp--line-forms line))))))
 
 (defun lp:update-line-if-different-parser-state (line parser-state syntax)
   (when (and line
@@ -499,28 +524,28 @@ current syntax parse data (`first-line' and `last-line' slots)."
                  parser-state
                  (slot-value line 'parser-state))))
     (multiple-value-bind (forms next-state)
-        (lp:parse-line syntax parser-state)
+        (lyqi--parse-line syntax parser-state)
       (set-slot-value line 'forms forms)
       (set-slot-value line 'parser-state parser-state)
       (lp:unfontify line)
-      (lp:fontify line)
+      (lp--fontify line)
       (forward-line 1)
-      (lp:update-line-if-different-parser-state (lp:next-line line) next-state syntax))))
+      (lp:update-line-if-different-parser-state (lp--next-line line) next-state syntax))))
 
 (defun lp:before-parse-update (beginning end)
   "Find the modified parse lines, covering the region starting
 from `beginning' to `end'.  Set the `first-modified-line' and
 `last-modified-line' slots of the current syntax."
   (let ((syntax lp--current-syntax))
-    (unless (lp:first-line syntax)
-      (lp:parse-and-highlight-buffer))
+    (unless (lp--first-line syntax)
+      (lyqi--parse-and-highlight-buffer))
     ;; find the portion of the parse-tree that needs an update
     (multiple-value-bind (first-modified-line last-modified-line)
-        (lp:find-lines syntax beginning (- end beginning))
+        (lp-find-lines syntax beginning (- end beginning))
       (set-slot-value syntax 'first-modified-line first-modified-line)
       (set-slot-value syntax 'last-modified-line last-modified-line))))
 
-(defun lp:parse-update (beginning end old-length)
+(defun lyqi--parse-update (beginning end old-length)
   "Update current syntax parse-tree after a buffer modification,
 and fontify the changed text.
 
@@ -539,28 +564,28 @@ and fontify the changed text.
               (last-modified-line (slot-value syntax 'last-modified-line)))
           ;; re-parse the modified lines
           (multiple-value-bind (first-new-line last-new-line next-state)
-              (lp:parse syntax
+              (lyqi--parse syntax
                         (if first-modified-line
                             (slot-value first-modified-line 'parser-state)
                             (slot-value syntax 'default-parser-state))
                         end-position)
             ;; fontify new lines
-            (loop for line = first-new-line then (lp:next-line line)
+            (loop for line = first-new-line then (lp--next-line line)
                   while line
                   do (lp:unfontify line)
-                  do (lp:fontify line))
+                  do (lp--fontify line))
             ;; replace the old lines with the new ones in the
             ;; double-linked list
             (if (or (not first-modified-line)
-                    (eql (lp:first-line syntax) first-modified-line))
+                    (eql (lp--first-line syntax) first-modified-line))
                 (set-slot-value syntax 'first-line first-new-line)
-                (lp--link-lines (lp:previous-line first-modified-line)
+                (lp--link-lines (lp--previous-line first-modified-line)
                                first-new-line))
             (if (or (not last-modified-line)
-                    (eql (lp:last-line syntax) last-modified-line))
+                    (eql (lp--last-line syntax) last-modified-line))
                 (set-slot-value syntax 'last-line last-new-line)
                 (lp--link-lines last-new-line
-                               (lp:next-line last-modified-line)))
+                               (lp--next-line last-modified-line)))
             ;; debug
             ;;(princ (format "old: [%s-%s] new: [%s-%s]"
             ;;               (marker-position (lp--marker first-modified-line))
@@ -576,13 +601,13 @@ and fontify the changed text.
             ;; the next line, then parse next line again (and so
             ;; on)
             (lp:update-line-if-different-parser-state
-             (lp:next-line last-new-line) next-state syntax)))))))
+             (lp--next-line last-new-line) next-state syntax)))))))
 
 ;;;
 ;;; Fontification
 ;;;
 
-(defun lp:fontify-region (start end face)
+(defun lp--fontify-region (start end face)
   (let ((overlay (make-overlay start end nil t nil)))
     (overlay-put overlay 'face face)))
 
@@ -595,56 +620,136 @@ and fontify the changed text.
 (defmethod lp:unfontify ((this lp-syntax))
   (remove-overlays))
 
-(defgeneric lp:fontify (parser-symbol)
+(defgeneric lp--fontify (parser-symbol)
   "Fontify a lexeme or form")
 
-(defgeneric lp:face (parser-symbol)
+(defgeneric lp--face (parser-symbol)
   "The face of a lexeme or form, used in fontification.")
 
-(defmethod lp:fontify ((this lp--line-parse))
-  (mapcar #'lp:fontify (lp:line-forms this)))
+(defmethod lp--fontify ((this lp--line-parse))
+  (mapcar #'lp--fontify (lp--line-forms this)))
 
-(defmethod lp:fontify ((this lp:parser-symbol))
+(defmethod lp--fontify ((this lp--parser-symbol))
   (let* ((start (marker-position (lp--marker this)))
          (end (+ start (lp:size this))))
     (when (> end start)
-      (lp:fontify-region start end (lp:face this)))))
+      (lp--fontify-region start end (lp--face this)))))
 
-(defmethod lp:fontify ((this lp:form))
+(defmethod lp--fontify ((this lp:form))
   (let ((children (slot-value this 'children)))
     (if children
-        (mapcar 'lp:fontify children)
+        (mapcar 'lp--fontify children)
         (call-next-method))))
 
-(defmethod lp:face ((this lp:parser-symbol))
+(defmethod lp--face ((this lp--parser-symbol))
   nil)
 
-(defmethod lp:face ((this lp:comment-lexeme))
-  '(face font-lock-comment-face))
-(defmethod lp:face ((this lp:comment-delimiter-lexeme))
-  '(face font-lock-comment-delimiter-face))
-(defmethod lp:face ((this lp:string-lexeme))
-  '(face font-lock-string-face))
-(defmethod lp:face ((this lp:doc-lexeme))
-  '(face font-lock-doc-face))
-(defmethod lp:face ((this lp:keyword-lexeme))
-  '(face font-lock-keyword-face))
-(defmethod lp:face ((this lp:builtin-lexeme))
-  '(face font-lock-builtin-face))
-(defmethod lp:face ((this lp:function-name-lexeme))
-  '(face font-lock-function-name-face))
-(defmethod lp:face ((this lp:variable-name-lexeme))
-  '(face font-lock-variable-name-face))
-(defmethod lp:face ((this lp:type-lexeme))
-  '(face font-lock-type-face))
-(defmethod lp:face ((this lp:constant-lexeme))
-  '(face font-lock-constant-face))
-(defmethod lp:face ((this lp:warning-lexeme))
-  '(face font-lock-warning-face))
-(defmethod lp:face ((this lp:negation-char-lexeme))
-  '(face font-lock-negation-char-face))
-(defmethod lp:face ((this lp:preprocessor-lexeme))
-  '(face font-lock-preprocessor-face))
+(defmethod lp--face ((this lp:comment-lexeme))
+  'font-lock-comment-face)
+(defmethod lp--face ((this lp:comment-delimiter-lexeme))
+  'font-lock-comment-delimiter-face)
+(defmethod lp--face ((this lp:string-lexeme))
+  'font-lock-string-face)
+(defmethod lp--face ((this lp:doc-lexeme))
+  'font-lock-doc-face)
+(defmethod lp--face ((this lp:keyword-lexeme))
+  'font-lock-keyword-face)
+(defmethod lp--face ((this lp:builtin-lexeme))
+  'font-lock-builtin-face)
+(defmethod lp--face ((this lp:function-name-lexeme))
+  'font-lock-function-name-face)
+(defmethod lp--face ((this lp:variable-name-lexeme))
+  'font-lock-variable-name-face)
+(defmethod lp--face ((this lp:type-lexeme))
+  'font-lock-type-face)
+(defmethod lp--face ((this lp:constant-lexeme))
+  'font-lock-constant-face)
+(defmethod lp--face ((this lp:warning-lexeme))
+  'font-lock-warning-face)
+(defmethod lp--face ((this lp:negation-char-lexeme))
+  'font-lock-negation-char-face)
+(defmethod lp--face ((this lp:preprocessor-lexeme))
+  'font-lock-preprocessor-face)
+
+(defun lyqi-block-nesting-level ()
+  (let ((level 0))
+    (save-excursion
+      (while (search-backward "{" nil t)
+	(setq level (1+ level))))
+    (save-excursion
+      (while (search-backward "}" nil t)
+	(setq level (1- level))))
+    level))
+
+;; this should be replaced with a more syntax-aware function
+;; when it is available or known
+(defun lyqi--block-limits ()
+  (let ((level 0)
+	done
+	start
+	end)
+    (save-excursion
+      (while (and (not done)
+		  (re-search-backward "{\\|}" nil 1))
+	(if (string= (match-string 0) "{")
+	    (if (= level 0)
+		(setq done t)
+	      (setq level (1- level)))
+	  (setq level (1+ level))))
+      (setq start (1+ (point))))
+    (setq done nil)
+    (save-excursion
+      (while (and (not done)
+		  (re-search-forward "{\\|}" nil 1))
+	(if (string= (match-string 0) "}")
+	    (if (= level 0)
+		(setq done t)
+	      (setq level (1- level)))
+	  (setq level (1+ level))))
+      (setq end (1- (point))))
+    (list start end)))
+
+;; uses point
+(defun lyqi-parse-block ()
+  "Parse a block of notes"
+  (let ((limits (lyqi--block-limits)))
+    (goto-char (car limits))
+    ;; parse tokens
+))
+  
+(defun lyqi--lex-note (syntax)
+  "Parse note at point and Return a new lyqi-note-lexeme"
+  (let ((pitch 0)
+        (alteration 0)
+        (octave-modifier 0)
+        (marker (point-marker))
+        (accidental nil))
+    (when (looking-at (slot-value (lyqi--language syntax) 'pitch-regex))
+      ;; pitch and alteration
+      (let ((pitch-data (assoc (match-string-no-properties 0)
+                               (slot-value (lyqi--language syntax) 'name->pitch))))
+        (setf pitch (second pitch-data))
+        (setf alteration (third pitch-data)))
+      (lyqi--forward-match)
+      ;; octave
+      (when (looking-at (slot-value (lyqi--language syntax) 'octave-regex))
+        (setf octave-modifier
+	      (ly-string-to-octave (match-string 0)))
+	(lyqi--forward-match))
+      ;; accidental
+      (cond ((eql (char-after) ?\!)
+             (forward-char 1)
+             (setf accidental 'forced))
+            ((eql (char-after) ?\?)
+             (forward-char 1)
+             (setf accidental 'cautionary))))
+    (make-instance 'lyqi-note-lexeme
+                   :pitch pitch
+                   :alteration alteration
+                   :octave-modifier octave-modifier
+                   :accidental accidental
+                   :marker marker
+                   :size (- (point) marker))))
 
 ;;;
 (provide 'lp-base)

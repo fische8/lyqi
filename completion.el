@@ -47,12 +47,12 @@
 (defgeneric lyqi-form-abbrev (form)
   "Return the completion data of form, or NIL is form cannot be completed.")
 
-(defmethod lyqi-form-abbrev ((this lp:parser-symbol))
+(defmethod lyqi-form-abbrev ((this lp--parser-symbol))
   nil)
 
 (defmethod lyqi-form-abbrev ((this lyqi-backslashed-lexeme))
   (multiple-value-bind (start abbrev)
-      (let ((string (lp:string this)))
+      (let ((string (lp--string this)))
         (string-match ".*\\\\\\(.*\\)" string)
         (values (+ (match-beginning 1) (lp--marker this))
                 (match-string 1 string)))
@@ -63,7 +63,7 @@
 
 (defmethod lyqi-form-abbrev ((this lyqi-scheme-symbol-lexeme))
   (make-instance 'lyqi-abbrev
-                 :abbrev (lp:string this)
+                 :abbrev (lp--string this)
                  :collection lyqi-scheme-words
                  :start-position (lp--marker this)))
 
@@ -89,7 +89,7 @@
 (defun lyqi-complete-word ()
   (interactive)
   (multiple-value-bind (form line rest-forms)
-      (lp:form-before-point lp--current-syntax (point))
+      (lp-form-before-point lp--current-syntax (point))
     (when (and form (= (point) (+ (lp--marker form) (lp:size form))))
       (let ((abbrev (lyqi-form-abbrev form)))
         (when abbrev
