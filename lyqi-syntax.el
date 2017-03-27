@@ -46,6 +46,7 @@ See `lyqi-comment-styles' for a list of available styles."
   :group 'lyqi)
 
 (eval-when-compile (require 'newcomment))
+
 ;; TODO anidated comments do not work
 ;; "%}" must be scaped
 (defun lyqi-comment-region (beg end arg)
